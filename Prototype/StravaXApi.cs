@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using System.IO;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
@@ -23,28 +24,24 @@ namespace Prototype
             Password.MakeReadOnly();
 
             ChromeOptions Options = new ChromeOptions();
-            Options.AddArgument("--window-size=1920,4000");
+            Options.AddArgument("--window-size=1300,15000");
+            Options.AddArgument("--headless");            
             BrowserDriver = new ChromeDriver(Options);
             StravaXApi stravaXApi = new StravaXApi();
             try
             {
                 stravaXApi.signIn(Username,Password);
                 List<ActivityShort> ActivitiesList = new List<ActivityShort>();
+                string AthleteId = "144100";
 
-                List<ActivityShort> ActivitiesMonthList = stravaXApi.getActivities("144100","2019","10");
-                ActivitiesList.AddRange(ActivitiesMonthList);
-                ActivitiesMonthList = stravaXApi.getActivities("144100","2019","09");
-                ActivitiesList.AddRange(ActivitiesMonthList);
-                ActivitiesMonthList = stravaXApi.getActivities("144100","2019","08");
-                ActivitiesList.AddRange(ActivitiesMonthList);
-                ActivitiesMonthList = stravaXApi.getActivities("144100","2019","07");
-                ActivitiesList.AddRange(ActivitiesMonthList);
-                ActivitiesMonthList = stravaXApi.getActivities("144100","2019","06");
-                ActivitiesList.AddRange(ActivitiesMonthList);
-                ActivitiesMonthList = stravaXApi.getActivities("144100","2019","05");
-                ActivitiesList.AddRange(ActivitiesMonthList);
-                ActivitiesMonthList = stravaXApi.getActivities("144100","2019","04");
-                ActivitiesList.AddRange(ActivitiesMonthList);
+                for(int year=2019;year<=2019;year++)
+                {
+                    for(int month=1;month<=10;month++)
+                    {
+                        List<ActivityShort> ActivitiesMonthList = stravaXApi.getActivities(AthleteId,$"{year:D4}",$"{month:D2}");
+                        ActivitiesList.AddRange(ActivitiesMonthList);
+                    }
+                }
 
                 foreach(ActivityShort ActivityShort in ActivitiesList)
                 {
@@ -77,7 +74,13 @@ namespace Prototype
 
             BrowserDriver.Navigate().GoToUrl(url);
             // Should wait for element.
-            Thread.Sleep(4000);
+            Thread.Sleep(1000);
+            if (!Directory.Exists("./screenshots"))
+            {
+                DirectoryInfo DirInfo = Directory.CreateDirectory("./screenshots");
+                System.Console.WriteLine($"directory for screenshots created at {DirInfo.FullName}");
+            }
+            ((ITakesScreenshot)BrowserDriver).GetScreenshot().SaveAsFile($"./screenshots/{AthleteId}_{Year}_{Month}.png");
 
             // Find all activity icons
             var Elts=BrowserDriver.FindElements(By.XPath("//div[@class='entry-type-icon']"));
@@ -101,16 +104,19 @@ namespace Prototype
                     // Locate activity time information
                     string ActivityTime = "";
                     try{
-                        var ActivityTimeElt = ActivityNumberElt.FindElement(By.XPath(".//time[@class='timestamp']"));
+                        // because of group activities I need to go to parents higher.
+                        var ActivityTimeElt = ActivityNumberElt.FindElement(By.XPath("./../..//time[@class='timestamp']"));
                         ActivityTime = ActivityTimeElt.GetAttribute("datetime");
                     }
                     catch(OpenQA.Selenium.WebDriverException e) {
-                        System.Console.WriteLine($"Skip Activity @{url} Err:{e.Message}");
+                        System.Console.WriteLine($"can't read activity time @{url} Err:{e.Message}");
                     }
 
                     // Retrieve the activity class, with that it's poosible to know the activity type
                     var ActivityTypeElt = Elt.FindElement(By.XPath("./span/span"));
                     ActivityType ActivityType = parseActivityType(ActivityTypeElt.GetAttribute("class"));
+
+
                     System.Console.WriteLine($"Id={ActivityId} Type={ActivityType} Time={ActivityTime}");
                     var ActivityShort = new ActivityShort(ActivityId.Substring("Activity-".Length),ActivityType,ActivityTime);
                     ActivitiesList.Add(ActivityShort);
