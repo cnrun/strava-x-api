@@ -11,7 +11,8 @@ namespace Prototype
 {
     class StravaXApi: IDisposable
     {
-        public static IWebDriver BrowserDriver;
+        private IWebDriver BrowserDriver;
+        private static string AthleteId = "144100";
         static void Main(string[] args)
         {
             Console.WriteLine("Call API");
@@ -23,45 +24,58 @@ namespace Prototype
                 Password.AppendChar(c);
             Password.MakeReadOnly();
 
-            ChromeOptions Options = new ChromeOptions();
-            Options.AddArgument("--window-size=1300,15000");
-            Options.AddArgument("--headless");            
-            BrowserDriver = new ChromeDriver(Options);
             StravaXApi stravaXApi = new StravaXApi();
             try
             {
                 stravaXApi.signIn(Username,Password);
                 List<ActivityShort> ActivitiesList = new List<ActivityShort>();
-                string AthleteId = "144100";
 
                 for(int year=2019;year<=2019;year++)
                 {
                     for(int month=1;month<=10;month++)
                     {
-                        List<ActivityShort> ActivitiesMonthList = stravaXApi.getActivities(AthleteId,$"{year:D4}",$"{month:D2}");
+                        List<ActivityShort> ActivitiesMonthList;
+                        try
+                        {
+                            ActivitiesMonthList = stravaXApi.getActivities(AthleteId,$"{year:D4}",$"{month:D2}");
+                        }
+                        catch(StaleElementReferenceException)
+                        {
+                            // Wait and try again.
+                            ActivitiesMonthList = stravaXApi.getActivities(AthleteId,$"{year:D4}",$"{month:D2}");
+                        }
                         ActivitiesList.AddRange(ActivitiesMonthList);
                     }
                 }
 
                 foreach(ActivityShort ActivityShort in ActivitiesList)
                 {
-                    System.Console.WriteLine($"Activity={ActivityShort}");
+                    Console.WriteLine($"Activity={ActivityShort}");
                 }
-                System.Console.WriteLine($"Activities ={ActivitiesList.Count}");
+                Console.WriteLine($"Activities ={ActivitiesList.Count}");
             }
             catch(Exception e)
             {
-                Console.WriteLine($"ERROR:{e.Message}");                
+                Console.WriteLine($"ERROR:{e.ToString()}");  
             }
             finally
             {
                 stravaXApi.Dispose();
             }
         }
+        StravaXApi()
+        {
+            ChromeOptions Options = new ChromeOptions();
+            Options.AddArgument("--window-size=1300,15000");
+            Options.AddArgument("--headless");            
+            BrowserDriver = new ChromeDriver(Options);
+
+        }
         public void signIn(String Username, SecureString Password)
         {
             String url = $"https://www.strava.com/login";
             BrowserDriver.Navigate().GoToUrl(url);
+            // Enter login data
             BrowserDriver.FindElement(By.Name("email")).SendKeys(Username);
             BrowserDriver.FindElement(By.Name("password")).SendKeys(new System.Net.NetworkCredential("", Password).Password);
             BrowserDriver.FindElement(By.Id("login-button")).Click();
@@ -73,18 +87,20 @@ namespace Prototype
             String url = $"https://www.strava.com/athletes/{AthleteId}#interval_type?chart_type=miles&interval_type=month&interval={Year}{Month}&year_offset=0";
 
             BrowserDriver.Navigate().GoToUrl(url);
+            Console.WriteLine($"open ${url}");
             // Should wait for element.
-            Thread.Sleep(1000);
+            Thread.Sleep(2000);
+
             if (!Directory.Exists("./screenshots"))
             {
                 DirectoryInfo DirInfo = Directory.CreateDirectory("./screenshots");
-                System.Console.WriteLine($"directory for screenshots created at {DirInfo.FullName}");
+                Console.WriteLine($"directory for screenshots created at {DirInfo.FullName}");
             }
             ((ITakesScreenshot)BrowserDriver).GetScreenshot().SaveAsFile($"./screenshots/{AthleteId}_{Year}_{Month}.png");
 
-            // Find all activity icons
+            // Find all activity icons in thos page
             var Elts=BrowserDriver.FindElements(By.XPath("//div[@class='entry-type-icon']"));
-            System.Console.WriteLine($"Elts count={Elts.Count} for {Year}/{Month}");
+            Console.WriteLine($"Elts count={Elts.Count} for {Year}/{Month}");
 
             List<ActivityShort> ActivitiesList = new List<ActivityShort>();
 
@@ -102,50 +118,59 @@ namespace Prototype
                     }
 
                     // Locate activity time information
-                    string ActivityTime = "";
+                    string ActivityTimeString = "";
+                    IWebElement ActivityTimeElt;
                     try{
-                        // because of group activities I need to go to parents higher.
-                        var ActivityTimeElt = ActivityNumberElt.FindElement(By.XPath("./../..//time[@class='timestamp']"));
-                        ActivityTime = ActivityTimeElt.GetAttribute("datetime");
+                        if (ActivityNumberElt.TagName == "li")
+                        {
+                            // because of group activities I need to go to parents higher.
+                            ActivityTimeElt = ActivityNumberElt.FindElement(By.XPath("./../..//time[@class='timestamp']"));
+                        }
+                        else
+                        {
+                            ActivityTimeElt = ActivityNumberElt.FindElement(By.XPath(".//time[@class='timestamp']"));
+                        }
+                        ActivityTimeString = ActivityTimeElt.GetAttribute("datetime");
                     }
-                    catch(OpenQA.Selenium.WebDriverException e) {
-                        System.Console.WriteLine($"can't read activity time @{url} Err:{e.Message}");
+                    catch(WebDriverException e) {
+                        throw new NotFoundException($"can't read activity time {ActivityId} at {url} Err:{e.Message}", e);
                     }
 
                     // Retrieve the activity class, with that it's poosible to know the activity type
                     var ActivityTypeElt = Elt.FindElement(By.XPath("./span/span"));
                     ActivityType ActivityType = parseActivityType(ActivityTypeElt.GetAttribute("class"));
 
-
-                    System.Console.WriteLine($"Id={ActivityId} Type={ActivityType} Time={ActivityTime}");
+                    DateTime ActivityTime = DateTime.Parse(ActivityTimeString.Substring(0,ActivityTimeString.Length-4));
+                    Console.WriteLine($"Id={ActivityId} Type={ActivityType} Time={ActivityTime}");
                     var ActivityShort = new ActivityShort(ActivityId.Substring("Activity-".Length),ActivityType,ActivityTime);
                     ActivitiesList.Add(ActivityShort);
                 }
-                catch(OpenQA.Selenium.WebDriverException e) {
-                    System.Console.WriteLine($"Skip Activity @{url} Err:{e.Message}");
+                catch (Exception e) when (e is WebDriverException || e is NotFoundException)
+                {
+                    if (e is InvalidElementStateException)
+                    {
+                        // Page seams to be incorrect loaded. Probably need to wait more.
+                        throw e;
+                    }
+                    Console.WriteLine($"Skip Activity at {url} Err:{e.Message}");
                 }
             }
             return ActivitiesList;
         }
         private ActivityType parseActivityType(string ActivityTypeCssClass)
         {
-            if (ActivityTypeCssClass.Contains("icon-swim"))
-                return ActivityType.Swim;
-            else if (ActivityTypeCssClass.Contains("icon-run"))
-                return ActivityType.Run;
-            else if (ActivityTypeCssClass.Contains("icon-virtualride"))
-                return ActivityType.VirtualRide;
-            else if (ActivityTypeCssClass.Contains("icon-backcountryski"))
-                return ActivityType.BackcountrySki;
-            else if (ActivityTypeCssClass.Contains("icon-alpineski"))
-                return ActivityType.AlpineSki;
-            else if (ActivityTypeCssClass.Contains("icon-crosscountryskiing"))
-                return ActivityType.CrossCountrySkiing;
-            else if (ActivityTypeCssClass.Contains("icon-nordicski"))
-                return ActivityType.NordicSki;
-            else if (ActivityTypeCssClass.Contains("icon-snowboard"))
-                return ActivityType.Snowboard;
-            return ActivityType.Workout;
+            // Extract css class with activity type from all classes.
+            string ActivityTypeString = ActivityTypeCssClass.Substring(14);
+            ActivityTypeString = ActivityTypeString.Substring(0,ActivityTypeString.IndexOf(' '));
+            // Convert to ActivityType with the same text.
+            ActivityType ret = (ActivityType)Enum.Parse(typeof(ActivityType),ActivityTypeString,true);
+            if (! Enum.IsDefined(typeof(ActivityType), ret) | ret.ToString().Contains(","))  
+            {
+                // Fallback when ActivityType is not in Enum
+                ret = ActivityType.Other;
+                Console.WriteLine("{0} is not an underlying value of the ActivityType enumeration.", ActivityTypeString);
+            }
+            return ret;
         }
         public void Dispose()
         {

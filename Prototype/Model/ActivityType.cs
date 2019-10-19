@@ -31,9 +31,12 @@ namespace Prototype.Model
         StandUpPaddling,
         Surfing,
         VirtualRide,
+        VirtualRun,
         WeightTraining,
         Windsurf,
         Workout,
-        Yoga
+        Yoga,
+        // If ActivityType is not availlable at this time [10/2019]
+        Other
     }
 }

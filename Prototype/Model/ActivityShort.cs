@@ -1,12 +1,14 @@
+using System;
+
 namespace Prototype.Model
 {    
     class ActivityShort
     {
         ActivityType ActivityType;
-        string ActivityDate;
+        DateTime ActivityDate;
         string ActivityId;
 
-        public ActivityShort(string ActivityId, ActivityType ActivityType, string ActivityDate)
+        public ActivityShort(string ActivityId, ActivityType ActivityType, DateTime ActivityDate)
         {
             this.ActivityId = ActivityId;
             this.ActivityType = ActivityType;
