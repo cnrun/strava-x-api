@@ -120,6 +120,9 @@ namespace Prototype
                         ActivityNumberElt = ActivityNumberElt.FindElement(By.XPath("./.."));
                         ActivityId=ActivityNumberElt.GetAttribute("id");
                     }
+                    // activity title
+                    var ActivityTitleElt=ActivityNumberElt.FindElement(By.XPath(".//strong/a"));
+                    var ActivityTitle=ActivityTitleElt.Text;
 
                     // Locate activity time information
                     string ActivityTimeString = "";
@@ -151,8 +154,8 @@ namespace Prototype
                     ActivityType ActivityType = parseActivityType(ActivityTypeElt.GetAttribute("class"));
 
                     DateTime ActivityTime = DateTime.Parse(ActivityTimeString.Substring(0,ActivityTimeString.Length-4));
-                    Console.WriteLine($"Id={ActivityId} Type={ActivityType} Time={ActivityTime}");                    
-                    var ActivityShort = new ActivityShort(AthleteIdInGroup, ActivityId.Substring("Activity-".Length),ActivityType,ActivityTime);
+                    Console.WriteLine($"Id={ActivityId} Text={ActivityTitle} Type={ActivityType} Time={ActivityTime}");                    
+                    var ActivityShort = new ActivityShort(AthleteIdInGroup, ActivityId.Substring("Activity-".Length),ActivityTitle,ActivityType,ActivityTime);
                     ActivitiesList.Add(ActivityShort);
                 }
                 catch (Exception e) when (e is WebDriverException || e is NotFoundException)
