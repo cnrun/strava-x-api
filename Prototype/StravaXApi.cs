@@ -12,17 +12,21 @@ namespace Prototype
     class StravaXApi: IDisposable
     {
         private IWebDriver BrowserDriver;
-        private static string AthleteId = "144100";
         static void Main(string[] args)
         {
-            Console.WriteLine("Call API");
+            Console.WriteLine("Extended Strava-API.");
 
-            Console.WriteLine("Enter username: ");
+            if (args.Length!=3)
+            {
+                Console.WriteLine("Please find the three needed arguments from the code 😛");
+                return;
+            }
             String Username = args[0];
             SecureString Password = new SecureString();
             foreach(var c in args[1])
                 Password.AppendChar(c);
             Password.MakeReadOnly();
+            String AthleteId = args[2];
 
             StravaXApi stravaXApi = new StravaXApi();
             try
@@ -120,11 +124,17 @@ namespace Prototype
                     // Locate activity time information
                     string ActivityTimeString = "";
                     IWebElement ActivityTimeElt;
+                    string AthleteIdInGroup = AthleteId;
                     try{
                         if (ActivityNumberElt.TagName == "li")
                         {
                             // because of group activities I need to go to parents higher.
                             ActivityTimeElt = ActivityNumberElt.FindElement(By.XPath("./../..//time[@class='timestamp']"));
+                            // find out which Athlete Id
+                            var AthleteIdInGroupElt = ActivityNumberElt.FindElement(By.XPath(".//a[contains(@href,'/athletes/')]"));
+                            AthleteIdInGroup = AthleteIdInGroupElt.GetAttribute("href");
+                            AthleteIdInGroup = AthleteIdInGroup.Substring(AthleteIdInGroup.LastIndexOf("/")+1);
+                            System.Console.WriteLine($"Groupped activity : Activity {ActivityId} Athlete {AthleteIdInGroup}");
                         }
                         else
                         {
@@ -141,8 +151,8 @@ namespace Prototype
                     ActivityType ActivityType = parseActivityType(ActivityTypeElt.GetAttribute("class"));
 
                     DateTime ActivityTime = DateTime.Parse(ActivityTimeString.Substring(0,ActivityTimeString.Length-4));
-                    Console.WriteLine($"Id={ActivityId} Type={ActivityType} Time={ActivityTime}");
-                    var ActivityShort = new ActivityShort(ActivityId.Substring("Activity-".Length),ActivityType,ActivityTime);
+                    Console.WriteLine($"Id={ActivityId} Type={ActivityType} Time={ActivityTime}");                    
+                    var ActivityShort = new ActivityShort(AthleteIdInGroup, ActivityId.Substring("Activity-".Length),ActivityType,ActivityTime);
                     ActivitiesList.Add(ActivityShort);
                 }
                 catch (Exception e) when (e is WebDriverException || e is NotFoundException)
