@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Prototype.Model
 {    
@@ -10,7 +11,17 @@ namespace Prototype.Model
         string ActivityTitle;
         string AthleteId;
 
-        public ActivityShort(string AthleteId, string ActivityId, string ActivityTitle, ActivityType ActivityType, DateTime ActivityDate)
+        List<String> ActivityImagesList;
+        List<String> ActivityThumbnailsList;
+
+        public ActivityShort(
+            string AthleteId,
+            string ActivityId,
+            string ActivityTitle,
+            ActivityType ActivityType,
+            DateTime ActivityDate,
+            List<String> ActivityThumbnailsList,
+            List<String> ActivityImagesList)
         {
             this.AthleteId = AthleteId;
             this.ActivityId = ActivityId;
@@ -18,10 +29,13 @@ namespace Prototype.Model
 
             this.ActivityType = ActivityType;
             this.ActivityDate = ActivityDate;
+
+            this.ActivityThumbnailsList = ActivityThumbnailsList;
+            this.ActivityImagesList = ActivityImagesList;
         }
         override public string ToString()
         {
-            return $"athlete:{AthleteId} activity:{ActivityId} text:'{ActivityTitle}' type:{ActivityType} date:{ActivityDate}";
+            return $"athlete:{AthleteId} activity:{ActivityId} text:'{ActivityTitle}' type:{ActivityType} date:{ActivityDate} Images {ActivityThumbnailsList.Count}/{ActivityImagesList.Count}";
         }
     }
 }

@@ -12,11 +12,15 @@ namespace Prototype
     class StravaXApi: IDisposable
     {
         private IWebDriver BrowserDriver;
+        private Boolean ScreenshotsMonthActivities = false;
+        private Boolean DownloadThumbnailsActivities = false;
+        private Boolean DownloadImagesActivities = false;
+        private Boolean VerboseDebug = false;
         static void Main(string[] args)
         {
             Console.WriteLine("Extended Strava-API.");
 
-            if (args.Length!=3)
+            if (args.Length < 3)
             {
                 Console.WriteLine("Please find the three needed arguments from the code 😛");
                 return;
@@ -29,6 +33,11 @@ namespace Prototype
             String AthleteId = args[2];
 
             StravaXApi stravaXApi = new StravaXApi();
+            stravaXApi.ScreenshotsMonthActivities = Array.IndexOf(args,"--ScreenshotsMonthActivities") >= 0;
+            stravaXApi.DownloadThumbnailsActivities = Array.IndexOf(args,"--DownloadThumbnailsActivities") >= 0;
+            stravaXApi.DownloadImagesActivities = Array.IndexOf(args,"--DownloadImagesActivities") >= 0;
+            stravaXApi.VerboseDebug = Array.IndexOf(args,"--VerboseDebug") >= 0;
+            
             try
             {
                 stravaXApi.signIn(Username,Password);
@@ -46,6 +55,7 @@ namespace Prototype
                         catch(StaleElementReferenceException)
                         {
                             // Wait and try again.
+                            Thread.Sleep(2000);
                             ActivitiesMonthList = stravaXApi.getActivities(AthleteId,$"{year:D4}",$"{month:D2}");
                         }
                         ActivitiesList.AddRange(ActivitiesMonthList);
@@ -90,7 +100,7 @@ namespace Prototype
         {
             String url = $"https://www.strava.com/athletes/{AthleteId}#interval_type?chart_type=miles&interval_type=month&interval={Year}{Month}&year_offset=0";
 
-            BrowserDriver.Navigate().GoToUrl(url);
+            BrowserDriver.Navigate().GoToUrl(url);            
             Console.WriteLine($"open ${url}");
             // Should wait for element.
             Thread.Sleep(2000);
@@ -100,11 +110,14 @@ namespace Prototype
                 DirectoryInfo DirInfo = Directory.CreateDirectory("./screenshots");
                 Console.WriteLine($"directory for screenshots created at {DirInfo.FullName}");
             }
-            ((ITakesScreenshot)BrowserDriver).GetScreenshot().SaveAsFile($"./screenshots/{AthleteId}_{Year}_{Month}.png");
+            if (ScreenshotsMonthActivities)
+            {
+                ((ITakesScreenshot)BrowserDriver).GetScreenshot().SaveAsFile($"./screenshots/{AthleteId}_{Year}_{Month}.png");
+            }
 
             // Find all activity icons in thos page
             var Elts=BrowserDriver.FindElements(By.XPath("//div[@class='entry-type-icon']"));
-            Console.WriteLine($"Elts count={Elts.Count} for {Year}/{Month}");
+            if (VerboseDebug) Console.WriteLine($"Elts count={Elts.Count} for {Year}/{Month}");
 
             List<ActivityShort> ActivitiesList = new List<ActivityShort>();
 
@@ -121,8 +134,44 @@ namespace Prototype
                         ActivityId=ActivityNumberElt.GetAttribute("id");
                     }
                     // activity title
-                    var ActivityTitleElt=ActivityNumberElt.FindElement(By.XPath(".//strong/a"));
-                    var ActivityTitle=ActivityTitleElt.Text;
+                    var ActivityTitleElt = ActivityNumberElt.FindElement(By.XPath(".//strong/a"));
+                    var ActivityTitle = ActivityTitleElt.Text;
+
+                    // activity thumbnails images 
+                    var ActivityImageElts = ActivityNumberElt.FindElements(By.XPath(".//img[@alt='Photo']"));
+                    List<String> ActivityThumbnailsList = new List<String>();
+                    foreach (IWebElement ActivityImageElt in ActivityImageElts)
+                    {
+                        // https://dgtzuqphqg23d.cloudfront.net/Wz2CrhzkXF3hm99lZmgWRBRbWhHBPLxUGDja_aMJDeQ-128x72.jpg
+                        string imageUrl = ActivityImageElt.GetAttribute("src");
+                        ActivityThumbnailsList.Add(imageUrl);                        
+                        if (VerboseDebug) System.Console.WriteLine($"Activity {ActivityId} url {imageUrl}");
+                        if(DownloadThumbnailsActivities)
+                        {
+                            System.Net.WebClient webClient = new System.Net.WebClient();
+                            string[] pathElts = imageUrl.Split('/');
+                            string localFileName = $"./screenshots/{AthleteId}_{Year}_{Month}_{ActivityId}_{pathElts[pathElts.Length-1]}.png";
+                            webClient.DownloadFile(imageUrl, localFileName);
+                        }
+                    }
+                    
+                    // activity big images
+                    var ActivityBigImageElts = ActivityNumberElt.FindElements(By.XPath(".//li[@str-type='photo']"));
+                    List<String> ActivityImagesList = new List<String>();
+                    foreach (IWebElement ActivityImageElt in ActivityBigImageElts)
+                    {
+                        // https://dgtzuqphqg23d.cloudfront.net/Wz2CrhzkXF3hm99lZmgWRBRbWhHBPLxUGDja_aMJDeQ-2048x1152.jpg
+                        string imageUrl = ActivityImageElt.GetAttribute("str-target-url");
+                        ActivityThumbnailsList.Add(imageUrl);                        
+                        if (VerboseDebug) System.Console.WriteLine($"Activity {ActivityId} url {imageUrl}");
+                        if(DownloadImagesActivities)
+                        {
+                            System.Net.WebClient webClient = new System.Net.WebClient();
+                            string[] pathElts = imageUrl.Split('/');
+                            string localFileName = $"./screenshots/{AthleteId}_{Year}_{Month}_{ActivityId}_{pathElts[pathElts.Length-1]}.png";
+                            webClient.DownloadFile(imageUrl, localFileName);
+                        }
+                    }
 
                     // Locate activity time information
                     string ActivityTimeString = "";
@@ -137,7 +186,7 @@ namespace Prototype
                             var AthleteIdInGroupElt = ActivityNumberElt.FindElement(By.XPath(".//a[contains(@href,'/athletes/')]"));
                             AthleteIdInGroup = AthleteIdInGroupElt.GetAttribute("href");
                             AthleteIdInGroup = AthleteIdInGroup.Substring(AthleteIdInGroup.LastIndexOf("/")+1);
-                            System.Console.WriteLine($"Groupped activity : Activity {ActivityId} Athlete {AthleteIdInGroup}");
+                            if (VerboseDebug) System.Console.WriteLine($"Groupped activity : Activity {ActivityId} Athlete {AthleteIdInGroup}");
                         }
                         else
                         {
@@ -154,13 +203,20 @@ namespace Prototype
                     ActivityType ActivityType = parseActivityType(ActivityTypeElt.GetAttribute("class"));
 
                     DateTime ActivityTime = DateTime.Parse(ActivityTimeString.Substring(0,ActivityTimeString.Length-4));
-                    Console.WriteLine($"Id={ActivityId} Text={ActivityTitle} Type={ActivityType} Time={ActivityTime}");                    
-                    var ActivityShort = new ActivityShort(AthleteIdInGroup, ActivityId.Substring("Activity-".Length),ActivityTitle,ActivityType,ActivityTime);
+                    if (VerboseDebug) Console.WriteLine($"Id={ActivityId} Text={ActivityTitle} Type={ActivityType} Time={ActivityTime}");                    
+                    var ActivityShort = new ActivityShort(
+                        AthleteIdInGroup,
+                        ActivityId.Substring("Activity-".Length),
+                        ActivityTitle,
+                        ActivityType,
+                        ActivityTime,
+                        ActivityThumbnailsList,
+                        ActivityImagesList);
                     ActivitiesList.Add(ActivityShort);
                 }
                 catch (Exception e) when (e is WebDriverException || e is NotFoundException)
                 {
-                    if (e is InvalidElementStateException)
+                    if (e is InvalidElementStateException || e is StaleElementReferenceException)
                     {
                         // Page seams to be incorrect loaded. Probably need to wait more.
                         throw e;
