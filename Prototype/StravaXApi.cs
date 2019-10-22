@@ -4,6 +4,7 @@ using System.IO;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
+using OpenQA.Selenium.Remote;
 using System.Security;
 using Prototype.Model;
 using System.Collections.Generic;
@@ -16,6 +17,7 @@ namespace Prototype
         private Boolean DownloadThumbnailsActivities = false;
         private Boolean DownloadImagesActivities = false;
         private Boolean VerboseDebug = false;
+        static private Boolean RunBrowserStack = true;
         static void Main(string[] args)
         {
             Console.WriteLine("Extended Strava-API.");
@@ -32,7 +34,11 @@ namespace Prototype
             Password.MakeReadOnly();
             String AthleteId = args[2];
 
-            StravaXApi stravaXApi = new StravaXApi();
+            StravaXApi stravaXApi;
+            if (RunBrowserStack)
+                stravaXApi = new StravaXApi(args[3],args[4]);
+            else
+                stravaXApi = new StravaXApi();
             stravaXApi.ScreenshotsMonthActivities = Array.IndexOf(args,"--ScreenshotsMonthActivities") >= 0;
             stravaXApi.DownloadThumbnailsActivities = Array.IndexOf(args,"--DownloadThumbnailsActivities") >= 0;
             stravaXApi.DownloadImagesActivities = Array.IndexOf(args,"--DownloadImagesActivities") >= 0;
@@ -83,7 +89,25 @@ namespace Prototype
             Options.AddArgument("--window-size=1300,15000");
             Options.AddArgument("--headless");            
             BrowserDriver = new ChromeDriver(Options);
+        }
+        StravaXApi(string BrowserStackUserName, string BrowserStackAccessKey)
+        {
+            DesiredCapabilities capability = new DesiredCapabilities();
 
+            capability.SetCapability("single", "System.Configuration.AppSettingsSection, System.Configuration, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+            capability.SetCapability("local", "System.Configuration.AppSettingsSection, System.Configuration, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+            capability.SetCapability("parallel", "System.Configuration.AppSettingsSection, System.Configuration, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+            capability.SetCapability("chrome", "System.Configuration.AppSettingsSection, System.Configuration, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+            capability.SetCapability("firefox", "System.Configuration.AppSettingsSection, System.Configuration, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+            capability.SetCapability("safari", "System.Configuration.AppSettingsSection, System.Configuration, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+            capability.SetCapability("ie","System.Configuration.AppSettingsSection, System.Configuration, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+
+            capability.SetCapability("build", "version1");
+            capability.SetCapability("project", "strava-x-api");
+
+            capability.SetCapability("browserstack.user", BrowserStackUserName);
+            capability.SetCapability("browserstack.key", BrowserStackAccessKey);
+            BrowserDriver = new RemoteWebDriver(new Uri("http://hub-cloud.browserstack.com/wd/hub/"), capability);
         }
         public void signIn(String Username, SecureString Password)
         {
