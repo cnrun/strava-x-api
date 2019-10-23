@@ -17,14 +17,14 @@ namespace Prototype
         private Boolean DownloadThumbnailsActivities = false;
         private Boolean DownloadImagesActivities = false;
         private Boolean VerboseDebug = false;
-        static private Boolean RunBrowserStack = true;
+        private Boolean RunBrowserStack = true;
         static void Main(string[] args)
         {
             Console.WriteLine("Extended Strava-API.");
 
             if (args.Length < 3)
             {
-                Console.WriteLine("Please find the three needed arguments from the code 😛");
+                Console.WriteLine("Please find the three or five needed arguments from the code 😛. Oh three are 5 Options at least on that! ");
                 return;
             }
             String Username = args[0];
@@ -35,7 +35,7 @@ namespace Prototype
             String AthleteId = args[2];
 
             StravaXApi stravaXApi;
-            if (RunBrowserStack)
+            if (Array.IndexOf(args,"--RunBrowserStack") >= 0)
                 stravaXApi = new StravaXApi(args[3],args[4]);
             else
                 stravaXApi = new StravaXApi();
@@ -43,6 +43,7 @@ namespace Prototype
             stravaXApi.DownloadThumbnailsActivities = Array.IndexOf(args,"--DownloadThumbnailsActivities") >= 0;
             stravaXApi.DownloadImagesActivities = Array.IndexOf(args,"--DownloadImagesActivities") >= 0;
             stravaXApi.VerboseDebug = Array.IndexOf(args,"--VerboseDebug") >= 0;
+            stravaXApi.RunBrowserStack = Array.IndexOf(args,"--RunBrowserStack") >= 0;
             
             try
             {
@@ -51,7 +52,7 @@ namespace Prototype
 
                 for(int year=2019;year<=2019;year++)
                 {
-                    for(int month=1;month<=10;month++)
+                    for(int month=7;month<=7;month++)
                     {
                         List<ActivityShort> ActivitiesMonthList;
                         try
@@ -92,8 +93,9 @@ namespace Prototype
         }
         StravaXApi(string BrowserStackUserName, string BrowserStackAccessKey)
         {
+            // Warnings do not make sence for RemoteWebDriver with BrowserStack
+            #pragma warning disable CS0618
             DesiredCapabilities capability = new DesiredCapabilities();
-
             capability.SetCapability("single", "System.Configuration.AppSettingsSection, System.Configuration, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
             capability.SetCapability("local", "System.Configuration.AppSettingsSection, System.Configuration, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
             capability.SetCapability("parallel", "System.Configuration.AppSettingsSection, System.Configuration, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
@@ -107,6 +109,8 @@ namespace Prototype
 
             capability.SetCapability("browserstack.user", BrowserStackUserName);
             capability.SetCapability("browserstack.key", BrowserStackAccessKey);
+            #pragma warning restore CS0618
+
             BrowserDriver = new RemoteWebDriver(new Uri("http://hub-cloud.browserstack.com/wd/hub/"), capability);
         }
         public void signIn(String Username, SecureString Password)
@@ -157,6 +161,7 @@ namespace Prototype
                         ActivityNumberElt = ActivityNumberElt.FindElement(By.XPath("./.."));
                         ActivityId=ActivityNumberElt.GetAttribute("id");
                     }
+                    ActivityId = ActivityId.Substring("Activity-".Length);
                     // activity title
                     var ActivityTitleElt = ActivityNumberElt.FindElement(By.XPath(".//strong/a"));
                     var ActivityTitle = ActivityTitleElt.Text;
@@ -186,7 +191,7 @@ namespace Prototype
                     {
                         // https://dgtzuqphqg23d.cloudfront.net/Wz2CrhzkXF3hm99lZmgWRBRbWhHBPLxUGDja_aMJDeQ-2048x1152.jpg
                         string imageUrl = ActivityImageElt.GetAttribute("str-target-url");
-                        ActivityThumbnailsList.Add(imageUrl);                        
+                        ActivityImagesList.Add(imageUrl);                        
                         if (VerboseDebug) System.Console.WriteLine($"Activity {ActivityId} url {imageUrl}");
                         if(DownloadImagesActivities)
                         {
@@ -201,6 +206,8 @@ namespace Prototype
                     string ActivityTimeString = "";
                     IWebElement ActivityTimeElt;
                     string AthleteIdInGroup = AthleteId;
+                    List<String> GroupActivityList = new List<String>();
+                    List<String> GroupAthleteList = new List<String>();
                     try{
                         if (ActivityNumberElt.TagName == "li")
                         {
@@ -211,6 +218,24 @@ namespace Prototype
                             AthleteIdInGroup = AthleteIdInGroupElt.GetAttribute("href");
                             AthleteIdInGroup = AthleteIdInGroup.Substring(AthleteIdInGroup.LastIndexOf("/")+1);
                             if (VerboseDebug) System.Console.WriteLine($"Groupped activity : Activity {ActivityId} Athlete {AthleteIdInGroup}");
+
+                            // for group activities we are creating groups                            
+                            var GroupActivityElts = ActivityNumberElt.FindElements(By.XPath("./../../..//li[@class='entity-details feed-entry']"));
+                            foreach (IWebElement GroupActivityElt in GroupActivityElts)
+                            {
+                                string GroupActivityString=GroupActivityElt.GetAttribute("id");
+                                GroupActivityString = GroupActivityString.Substring("Activity-".Length);
+                                if (ActivityId!=GroupActivityString)
+                                {
+                                    // in ActivitysGroupElts we have both the original activity and the other activities in the group. We need to filter
+                                    GroupActivityList.Add(GroupActivityString);
+                                    // also retrieve the athlete id for the activity
+                                    string GroupAthleteUrl = GroupActivityElt.FindElement(By.XPath(".//a[@class='avatar-content']")).GetAttribute("href");
+                                    string GroupAthleteId = GroupAthleteUrl.Substring(GroupAthleteUrl.LastIndexOf('/')+1);
+                                    GroupAthleteList.Add(GroupAthleteId);
+                                    if (VerboseDebug) Console.WriteLine($"Group {ActivityId} with {GroupActivityString} from {GroupAthleteId}");
+                                }
+                            }
                         }
                         else
                         {
@@ -230,12 +255,14 @@ namespace Prototype
                     if (VerboseDebug) Console.WriteLine($"Id={ActivityId} Text={ActivityTitle} Type={ActivityType} Time={ActivityTime}");                    
                     var ActivityShort = new ActivityShort(
                         AthleteIdInGroup,
-                        ActivityId.Substring("Activity-".Length),
+                        ActivityId,
                         ActivityTitle,
                         ActivityType,
                         ActivityTime,
                         ActivityThumbnailsList,
-                        ActivityImagesList);
+                        ActivityImagesList,
+                        GroupActivityList,
+                        GroupAthleteList);
                     ActivitiesList.Add(ActivityShort);
                 }
                 catch (Exception e) when (e is WebDriverException || e is NotFoundException)

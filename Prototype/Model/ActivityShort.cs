@@ -13,6 +13,8 @@ namespace Prototype.Model
 
         List<String> ActivityImagesList;
         List<String> ActivityThumbnailsList;
+        List<String> GroupActivityList;
+        List<String> GroupAthleteList;
 
         public ActivityShort(
             string AthleteId,
@@ -21,7 +23,9 @@ namespace Prototype.Model
             ActivityType ActivityType,
             DateTime ActivityDate,
             List<String> ActivityThumbnailsList,
-            List<String> ActivityImagesList)
+            List<String> ActivityImagesList,
+            List<String> GroupActivityList,
+            List<String> GroupAthleteList)
         {
             this.AthleteId = AthleteId;
             this.ActivityId = ActivityId;
@@ -32,10 +36,12 @@ namespace Prototype.Model
 
             this.ActivityThumbnailsList = ActivityThumbnailsList;
             this.ActivityImagesList = ActivityImagesList;
+            this.GroupActivityList = GroupActivityList;
+            this.GroupAthleteList = GroupAthleteList;
         }
         override public string ToString()
         {
-            return $"athlete:{AthleteId} activity:{ActivityId} text:'{ActivityTitle}' type:{ActivityType} date:{ActivityDate} Images {ActivityThumbnailsList.Count}/{ActivityImagesList.Count}";
+            return $"athlete:{AthleteId} activity:{ActivityId} text:'{ActivityTitle}' type:{ActivityType} date:{ActivityDate} Images {ActivityThumbnailsList.Count}/{ActivityImagesList.Count} Group {GroupActivityList.Count}/{GroupAthleteList.Count}";
         }
     }
 }
