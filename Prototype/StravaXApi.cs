@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using System.Globalization;
 using System.IO;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
@@ -50,9 +51,12 @@ namespace Prototype
                 stravaXApi.signIn(Username,Password);
                 List<ActivityShort> ActivitiesList = new List<ActivityShort>();
 
-                for(int year=2019;year<=2019;year++)
+                DateTime FirstActivityDate = stravaXApi.getActivityRange(AthleteId);
+                System.Console.WriteLine($"First activity at {FirstActivityDate.Year}/{FirstActivityDate.Month}");                    
+
+                for(int year=FirstActivityDate.Year;year<=FirstActivityDate.Year;year++)
                 {
-                    for(int month=7;month<=7;month++)
+                    for(int month=1;month<=12;month++)
                     {
                         List<ActivityShort> ActivitiesMonthList;
                         try
@@ -124,6 +128,76 @@ namespace Prototype
             // Wait until Login is done.
             new WebDriverWait(BrowserDriver, TimeSpan.FromSeconds(30)).Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementExists((By.XPath("//span[@class='app-icon-wrapper']"))));
         }
+
+        /**
+         * Find the oldest possible date for an activity
+         */
+        public DateTime getActivityRange(String AthleteId)
+        {
+            // open athlete page
+            String url = $"https://www.strava.com/athletes/{AthleteId}";
+
+            BrowserDriver.Navigate().GoToUrl(url);            
+            Console.WriteLine($"open ${url}");
+
+            // locate dates in the pulldown menu
+            var Elts=BrowserDriver.FindElements(By.XPath("//div[@id='interval-graph']/div/div/ul/li/a"));
+            int MinDateInt = int.MaxValue;
+            String MinDateString="";
+            // parse all entries
+            foreach (IWebElement Elt in Elts)
+            {
+                string UrlString = Elt.GetProperty("href");
+                int index = UrlString.IndexOf("interval=");
+                string DateString = UrlString.Substring(index+9,6);
+                
+                int ActDateInt = int.Parse(DateString);
+                // extract the oldest date
+                if (ActDateInt<MinDateInt)
+                {
+                    MinDateInt = ActDateInt;
+                    MinDateString=DateString;
+                }
+            }
+            if (string.IsNullOrEmpty(MinDateString)) throw new ArgumentException("can't find date interval");
+            // compute the date from the week number
+            int YearBeginInt=int.Parse(MinDateString.Substring(0,4))-1;
+            int WeekBeginInt=int.Parse(MinDateString.Substring(4,2));
+            DateTime FirstActivityDate = FirstDateOfWeekISO8601(YearBeginInt,WeekBeginInt);
+            if (VerboseDebug) System.Console.WriteLine($"Begin = {YearBeginInt}/{WeekBeginInt} {FirstActivityDate}");
+
+            return FirstActivityDate;
+        }
+        /**
+         * from https://stackoverflow.com/a/9064954/281188
+         */
+        public static DateTime FirstDateOfWeekISO8601(int year, int weekOfYear)
+        {
+            DateTime jan1 = new DateTime(year, 1, 1);
+            int daysOffset = DayOfWeek.Thursday - jan1.DayOfWeek;
+
+            // Use first Thursday in January to get first week of the year as
+            // it will never be in Week 52/53
+            DateTime firstThursday = jan1.AddDays(daysOffset);
+            var cal = CultureInfo.CurrentCulture.Calendar;
+            int firstWeek = cal.GetWeekOfYear(firstThursday, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+
+            var weekNum = weekOfYear;
+            // As we're adding days to a date in Week 1,
+            // we need to subtract 1 in order to get the right date for week #1
+            if (firstWeek == 1)
+            {
+                weekNum -= 1;
+            }
+
+            // Using the first Thursday as starting week ensures that we are starting in the right year
+            // then we add number of weeks multiplied with days
+            var result = firstThursday.AddDays(weekNum * 7);
+
+            // Subtract 3 days from Thursday to get Monday, which is the first weekday in ISO8601
+            return result.AddDays(-3);
+        }  
+
         public List<ActivityShort> getActivities(String AthleteId, String Year, String Month)
         {
             String url = $"https://www.strava.com/athletes/{AthleteId}#interval_type?chart_type=miles&interval_type=month&interval={Year}{Month}&year_offset=0";
