@@ -54,9 +54,9 @@ namespace Prototype
                 DateTime FirstActivityDate = stravaXApi.getActivityRange(AthleteId);
                 System.Console.WriteLine($"First activity at {FirstActivityDate.Year}/{FirstActivityDate.Month}");                    
 
-                for(int year=FirstActivityDate.Year;year<=FirstActivityDate.Year;year++)
+                for(int year=2019;year<=2019;year++)
                 {
-                    for(int month=1;month<=12;month++)
+                    for(int month=6;month<=6;month++)
                     {
                         List<ActivityShort> ActivitiesMonthList;
                         try
@@ -76,6 +76,7 @@ namespace Prototype
                 foreach(ActivityShort ActivityShort in ActivitiesList)
                 {
                     Console.WriteLine($"Activity={ActivityShort}");
+                    Console.WriteLine($"JSON={ActivityShort.WriteFromObject(ActivityShort)}");
                 }
                 Console.WriteLine($"Activities ={ActivitiesList.Count}");
             }
