@@ -75,7 +75,6 @@ namespace Prototype
 
                 foreach(ActivityShort ActivityShort in ActivitiesList)
                 {
-                    Console.WriteLine($"Activity={ActivityShort}");
                     Console.WriteLine($"JSON={ActivityShort.WriteFromObject(ActivityShort)}");
                 }
                 Console.WriteLine($"Activities ={ActivitiesList.Count}");
@@ -322,6 +321,26 @@ namespace Prototype
                         throw new NotFoundException($"can't read activity time {ActivityId} at {url} Err:{e.Message}", e);
                     }
 
+                    string ActivityImageMapUrl;
+                    try{
+                        IWebElement ImageWithMapElt;
+                        if (ActivityNumberElt.TagName == "li")
+                        {
+                            // Image with map for activities with group
+                            ImageWithMapElt = ActivityNumberElt.FindElement(By.XPath("./../../div/a/div[contains(@str-type,'map')]/img"));
+                        }
+                        else
+                        {
+                            // Image with map for activities without group
+                            ImageWithMapElt = ActivityNumberElt.FindElement(By.XPath(".//a[contains(@str-type,'map')]/img"));
+                        }
+                        ActivityImageMapUrl=ImageWithMapElt.GetAttribute("src");
+                    }
+                    catch(WebDriverException) {
+                        // activity map is not always present.
+                        ActivityImageMapUrl=null;
+                    }
+
                     // Retrieve the activity class, with that it's poosible to know the activity type
                     var ActivityTypeElt = Elt.FindElement(By.XPath("./span/span"));
                     ActivityType ActivityType = parseActivityType(ActivityTypeElt.GetAttribute("class"));
@@ -334,6 +353,7 @@ namespace Prototype
                         ActivityTitle,
                         ActivityType,
                         ActivityTime,
+                        ActivityImageMapUrl,
                         ActivityThumbnailsList,
                         ActivityImagesList,
                         GroupActivityList,

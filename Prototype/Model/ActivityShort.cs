@@ -16,6 +16,8 @@ namespace Prototype.Model
         [DataMember]
         string ActivityTitle;
         [DataMember]
+        string ActivityImageMapUrl;
+        [DataMember]
         string AthleteId;
 
         [DataMember]
@@ -33,6 +35,7 @@ namespace Prototype.Model
             string ActivityTitle,
             ActivityType ActivityType,
             DateTime ActivityDate,
+            string ActivityImageMapUrl,
             List<String> ActivityThumbnailsList,
             List<String> ActivityImagesList,
             List<String> GroupActivityList,
@@ -45,6 +48,8 @@ namespace Prototype.Model
             this.ActivityType = ActivityType;
             this.ActivityDate = ActivityDate;
 
+            this.ActivityImageMapUrl=ActivityImageMapUrl;
+
             this.ActivityThumbnailsList = ActivityThumbnailsList;
             this.ActivityImagesList = ActivityImagesList;
             this.GroupActivityList = GroupActivityList;
@@ -52,7 +57,7 @@ namespace Prototype.Model
         }
         override public string ToString()
         {
-            return $"athlete:{AthleteId} activity:{ActivityId} text:'{ActivityTitle}' type:{ActivityType} date:{ActivityDate} Images {ActivityThumbnailsList.Count}/{ActivityImagesList.Count} Group {GroupActivityList.Count}/{GroupAthleteList.Count}";
+            return $"athlete:{AthleteId} activity:{ActivityId} text:'{ActivityTitle}' type:{ActivityType} date:{ActivityDate} Map {ActivityImageMapUrl} Images {ActivityThumbnailsList.Count}/{ActivityImagesList.Count} Group {GroupActivityList.Count}/{GroupAthleteList.Count}";
         }
         public static string WriteFromObject(ActivityShort ActivityShort)
         {
@@ -60,6 +65,8 @@ namespace Prototype.Model
             var ms = new System.IO.MemoryStream();
 
             // Serializer the User object to the stream.
+            // https://michaelscodingspot.com/the-battle-of-c-to-json-serializers-in-net-core-3/
+            // The future of JSON in .NET Core 3.0 https://devblogs.microsoft.com/dotnet/try-the-new-system-text-json-apis/
             var ser = new System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof(ActivityShort));
             ser.WriteObject(ms, ActivityShort);
             byte[] json = ms.ToArray();
