@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
@@ -73,11 +74,25 @@ namespace Prototype
                     }
                 }
 
-                foreach(ActivityShort ActivityShort in ActivitiesList)
+                using (StravaXApiContext db = new StravaXApiContext())
                 {
-                    Console.WriteLine($"JSON={ActivityShort.SerializePrettyPrint(ActivityShort)}");
+                    foreach(ActivityShort ActivityShort in ActivitiesList)
+                    {
+                        Console.WriteLine($"JSON={ActivityShort.SerializePrettyPrint(ActivityShort)}");
+                        if (db.ActivityShortDB.Find(ActivityShort.ActivityId)==null)
+                        {
+                            db.ActivityShortDB.Add(ActivityShort);
+                            db.SaveChanges();
+                            Console.WriteLine($"Enterred Activities: {db.ActivityShortDB.OrderBy(b => b.ActivityId).Count()}");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"{ActivityShort.ActivityId} allready in database");
+                        }
+                    }
+                    Console.WriteLine($"total read = {ActivitiesList.Count}");
+                    Console.WriteLine($"total stored = {db.ActivityShortDB.OrderBy(b => b.ActivityId).Count()}");
                 }
-                Console.WriteLine($"Activities ={ActivitiesList.Count}");
             }
             catch(Exception e)
             {

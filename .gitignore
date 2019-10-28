@@ -330,3 +330,5 @@ ASALocalRun/
 .mfractor/
 .vscode/launch.json
 Prototype/screenshots/*
+Prototype/Migrations/*_InitialCreate*.cs
+Prototype/*.db

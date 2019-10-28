@@ -1,22 +1,113 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Linq;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
+
+// Add Entity Framework:
+// 1a) dotnet add package Microsoft.EntityFrameworkCore.SqlServer --version 3.0.0
+// 1b) dotnet add package Microsoft.EntityFrameworkCore.Sqlite
+// 2)dotnet tool install --global dotnet-ef
+//      Sie können das Tool über den folgenden Befehl aufrufen: dotnet-ef
+//      Das Tool "dotnet-ef" (Version 3.0.0) wurde erfolgreich installiert.
+// 3) dotnet add package Microsoft.EntityFrameworkCore.Design
+//      ...
+//      log  : Wiederherstellung in "1,83 sec" für "/Users/ericlouvard/Documents/Projects/strava-x-api/Prototype/Prototype.csproj" abgeschlossen.
+// 4) dotnet ef migrations add InitialCreate
+//      Done. To undo this action, use 'ef migrations remove'
+// 5) dotnet ef database update
+//      Executing DbCommand [Parameters=[], CommandType='Text', CommandTimeout='30']
+//      PRAGMA journal_mode = 'wal';
+//      Executing DbCommand [Parameters=[], CommandType='Text', CommandTimeout='30']
+//      CREATE TABLE "__EFMigrationsHistory" (
+//          "MigrationId" TEXT NOT NULL CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY,
+//          "ProductVersion" TEXT NOT NULL
+//      );
+//      Executing DbCommand [Parameters=[], CommandType='Text', CommandTimeout='30']
+//      SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsHistory' AND "type" = 'table';
+//      Executing DbCommand [Parameters=[], CommandType='Text', CommandTimeout='30']
+//      SELECT "MigrationId", "ProductVersion"
+//      FROM "__EFMigrationsHistory"
+//      ORDER BY "MigrationId";
+//      Applying migration '20191028211236_InitialCreate'.
+//      Executing DbCommand [Parameters=[], CommandType='Text', CommandTimeout='30']
+//      CREATE TABLE "ActivityShortDB" (
+//          "ActivityId" TEXT NOT NULL CONSTRAINT "PK_ActivityShortDB" PRIMARY KEY,
+//          "ActivityTyp        e" INTEGER NOT NULL,
+//          "ActivityDate" TEXT NOT NULL,
+//          "ActivityTitle" TEXT NULL,
+//          "ActivityImageMapUrl" TEXT NULL,
+//          "AthleteId" TEXT NULL
+//      );
+//      Executing DbCommand [Parameters=[], CommandType='Text', CommandTimeout='30']
+//      INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+//      VALUES ('20191028211236_InitialCreate', '3.0.0');
+//      Done.
+
 
 namespace Prototype.Model
 {    
-    class ActivityShort
+    public class ActivityShort
     {
         public ActivityType ActivityType { get; set; }
         public DateTime ActivityDate { get; set; }
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public string ActivityId { get; set; }
         public string ActivityTitle { get; set; }
         public string ActivityImageMapUrl { get; set; }
         public string AthleteId { get; set; }
 
-        public List<String> ActivityImagesList { get; set; }
-        public List<String> ActivityThumbnailsList { get; set; }
-        public List<String> GroupActivityList { get; set; }
-        public List<String> GroupAthleteList { get; set; }
+        // List as string: https://stackoverflow.com/a/31648135
+        [Column]
+        [Required]
+        private String ActivityImagesListAsString { get; set; }
+        [NotMapped]
+        public List<String> ActivityImagesList { 
+            get {
+                return ActivityImagesListAsString.Split(',').ToList();
+            }
+            set {
+                ActivityImagesListAsString = String.Join(",", value);
+            }
+        }
+        [Column]
+        [Required]
+        private String ActivityThumbnailsListAsString { get; set; }
+        [NotMapped]
+        public List<String> ActivityThumbnailsList {
+            get {
+                return ActivityThumbnailsListAsString.Split(',').ToList();
+            }
+            set {
+                ActivityThumbnailsListAsString = String.Join(",", value);
+            }
+        }
+        [Column]
+        [Required]
+        private string GroupActivityListAsString { get; set; }
+        [NotMapped]
+        public List<String> GroupActivityList {
+            get {
+                return GroupActivityListAsString.Split(',').ToList();
+            }
+            set {
+                GroupActivityListAsString = String.Join(",", value);
+            }
+        }
+        [Column]
+        [Required]
+        private string GroupAthleteListAsString { get; set; }
+        [NotMapped]
+        public List<String> GroupAthleteList {
+            get {
+                return GroupActivityListAsString.Split(',').ToList();
+            }
+            set {
+                GroupActivityListAsString = String.Join(",", value);
+            }
+        }
 
         public ActivityShort()
         {
