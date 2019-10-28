@@ -75,7 +75,7 @@ namespace Prototype
 
                 foreach(ActivityShort ActivityShort in ActivitiesList)
                 {
-                    Console.WriteLine($"JSON={ActivityShort.WriteFromObject(ActivityShort)}");
+                    Console.WriteLine($"JSON={ActivityShort.SerializePrettyPrint(ActivityShort)}");
                 }
                 Console.WriteLine($"Activities ={ActivitiesList.Count}");
             }
@@ -347,17 +347,18 @@ namespace Prototype
 
                     DateTime ActivityTime = DateTime.Parse(ActivityTimeString.Substring(0,ActivityTimeString.Length-4));
                     if (VerboseDebug) Console.WriteLine($"Id={ActivityId} Text={ActivityTitle} Type={ActivityType} Time={ActivityTime}");                    
-                    var ActivityShort = new ActivityShort(
-                        AthleteIdInGroup,
-                        ActivityId,
-                        ActivityTitle,
-                        ActivityType,
-                        ActivityTime,
-                        ActivityImageMapUrl,
-                        ActivityThumbnailsList,
-                        ActivityImagesList,
-                        GroupActivityList,
-                        GroupAthleteList);
+                    var ActivityShort = new ActivityShort();
+                    ActivityShort.AthleteId = AthleteId;
+                    ActivityShort.ActivityId = ActivityId;
+                    ActivityShort.ActivityTitle = ActivityTitle;
+                    ActivityShort.ActivityType = ActivityType;
+                    ActivityShort.ActivityDate = ActivityTime;
+                    ActivityShort.ActivityImageMapUrl=ActivityImageMapUrl;
+                    ActivityShort.ActivityThumbnailsList = ActivityThumbnailsList;
+                    ActivityShort.ActivityImagesList = ActivityImagesList;
+                    ActivityShort.GroupActivityList = GroupActivityList;
+                    ActivityShort.GroupAthleteList = GroupAthleteList;
+
                     ActivitiesList.Add(ActivityShort);
                 }
                 catch (Exception e) when (e is WebDriverException || e is NotFoundException)
