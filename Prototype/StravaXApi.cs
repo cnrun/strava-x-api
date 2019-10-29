@@ -232,6 +232,7 @@ namespace Prototype
 
             BrowserDriver.Navigate().GoToUrl(url);            
             Console.WriteLine($"open ${url}");
+            DateTime CrawlDate = DateTime.Now;
             // Should wait for element.
             Thread.Sleep(2000);
 
@@ -381,6 +382,7 @@ namespace Prototype
                     ActivityShort.ActivityTitle = ActivityTitle;
                     ActivityShort.ActivityType = ActivityType;
                     ActivityShort.ActivityDate = ActivityTime;
+                    ActivityShort.ActivityLastCrawled = CrawlDate;
                     ActivityShort.ActivityImageMapUrl=ActivityImageMapUrl;
                     ActivityShort.ActivityThumbnailsList = ActivityThumbnailsList;
                     ActivityShort.ActivityImagesList = ActivityImagesList;

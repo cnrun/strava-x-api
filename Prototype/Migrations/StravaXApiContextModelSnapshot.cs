@@ -28,6 +28,9 @@ namespace Prototype.Migrations
                     b.Property<string>("ActivityImageMapUrl")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime>("ActivityLastCrawled")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("ActivityTitle")
                         .HasColumnType("TEXT");
 
