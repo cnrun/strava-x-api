@@ -52,8 +52,15 @@ namespace Prototype
                 stravaXApi.signIn(Username,Password);
                 List<ActivityShort> ActivitiesList = new List<ActivityShort>();
 
-                DateTime FirstActivityDate = stravaXApi.getActivityRange(AthleteId);
-                System.Console.WriteLine($"First activity at {FirstActivityDate.Year}/{FirstActivityDate.Month}");                    
+                try
+                {
+                    DateTime FirstActivityDate = stravaXApi.getActivityRange(AthleteId);
+                    System.Console.WriteLine($"First activity at {FirstActivityDate.Year}/{FirstActivityDate.Month}");                    
+                }
+                catch(Exception)
+                {
+                    System.Console.WriteLine($"Can't find first activity date.");                    
+                }
 
                 for(int year=2019;year<=2019;year++)
                 {
@@ -115,8 +122,8 @@ namespace Prototype
             // Warnings do not make sence for RemoteWebDriver with BrowserStack
             #pragma warning disable CS0618
             DesiredCapabilities capability = new DesiredCapabilities();
-            capability.SetCapability("single", "System.Configuration.AppSettingsSection, System.Configuration, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
-            capability.SetCapability("local", "System.Configuration.AppSettingsSection, System.Configuration, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+            // capability.SetCapability("single", "System.Configuration.AppSettingsSection, System.Configuration, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
+            // capability.SetCapability("local", "System.Configuration.AppSettingsSection, System.Configuration, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
             capability.SetCapability("parallel", "System.Configuration.AppSettingsSection, System.Configuration, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
             capability.SetCapability("chrome", "System.Configuration.AppSettingsSection, System.Configuration, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
             capability.SetCapability("firefox", "System.Configuration.AppSettingsSection, System.Configuration, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a");
@@ -128,9 +135,15 @@ namespace Prototype
 
             capability.SetCapability("browserstack.user", BrowserStackUserName);
             capability.SetCapability("browserstack.key", BrowserStackAccessKey);
+            capability.SetCapability("os", "Windows");
+            capability.SetCapability("os_version", "10");
+            capability.SetCapability("browser_version", "78.0");
+            capability.SetCapability("resolution", "2048x1536"); //2048x1536
+            
             #pragma warning restore CS0618
 
             BrowserDriver = new RemoteWebDriver(new Uri("http://hub-cloud.browserstack.com/wd/hub/"), capability);
+            BrowserDriver.Manage().Window.Maximize();
         }
         public void signIn(String Username, SecureString Password)
         {
@@ -162,7 +175,7 @@ namespace Prototype
             // parse all entries
             foreach (IWebElement Elt in Elts)
             {
-                string UrlString = Elt.GetProperty("href");
+                string UrlString = Elt.GetAttribute("href");
                 int index = UrlString.IndexOf("interval=");
                 string DateString = UrlString.Substring(index+9,6);
                 
