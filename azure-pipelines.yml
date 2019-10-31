@@ -14,8 +14,9 @@ steps:
   inputs:
     command: 'build'
     projects: '**/*.csproj'
+
 - task: DotNetCoreCLI@2
   inputs:
     command: 'run'
-    projects: 'Prototyp'
+    projects: '**/*.csproj'
     arguments: '144100'
