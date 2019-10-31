@@ -23,9 +23,9 @@ namespace Prototype
         static void Main(string[] args)
         {
             Console.WriteLine("Extended Strava-API.");
-            if (args.Length < 3)
+            if (args.Length < 1)
             {
-                Console.WriteLine("Please find the three or five needed arguments from the code 😛. Oh three are 5 Options at least on that! ");
+                Console.WriteLine("Please find the needed arguments from the code 😛. Oh there are several options with environment variables! ");
                 return;
             }
 
