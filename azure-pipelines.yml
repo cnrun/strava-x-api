@@ -9,6 +9,18 @@ trigger:
 pool:
   vmImage: 'ubuntu-latest'
 
+variables:
+  BROWSERSTACK:
+  BROWSERSTACK_PWD:
+  BROWSERSTACK_USER:
+  CONNECTION_STRING:
+  FROM_MONTH:
+  FROM_YEAR:
+  TO_MONTH:
+  TO_YEAR:
+  STRAVA_USER:
+  STRAVA_PWD:
+
 steps:
 - task: DotNetCoreCLI@2
   inputs:
