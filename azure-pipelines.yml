@@ -9,17 +9,6 @@ trigger:
 pool:
   vmImage: 'ubuntu-latest'
 
-variables:
-  BROWSERSTACK:
-  BROWSERSTACK_PWD:
-  BROWSERSTACK_USER:
-  CONNECTION_STRING:
-  FROM_MONTH:
-  FROM_YEAR:
-  TO_MONTH:
-  TO_YEAR:
-  STRAVA_USER:
-  STRAVA_PWD:
 
 steps:
 - task: DotNetCoreCLI@2
@@ -28,6 +17,17 @@ steps:
     projects: '**/*.csproj'
 
 - task: DotNetCoreCLI@2
+  env:
+    BROWSERSTACK: $(BROWSERSTACK)
+    BROWSERSTACK_PWD: $(BROWSERSTACK_PWD)
+    BROWSERSTACK_USER: $(BROWSERSTACK_USER)
+    CONNECTION_STRING: $(CONNECTION_STRING)
+    FROM_MONTH: $(FROM_MONTH)
+    FROM_YEAR: $(FROM_YEAR)
+    TO_MONTH: $(TO_MONTH)
+    TO_YEAR: $(TO_YEAR)
+    STRAVA_USER: $(STRAVA_USER)
+    STRAVA_PWD: $(STRAVA_PWD)
   inputs:
     command: 'run'
     projects: '**/*.csproj'
