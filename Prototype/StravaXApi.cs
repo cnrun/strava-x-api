@@ -23,24 +23,29 @@ namespace Prototype
         static void Main(string[] args)
         {
             Console.WriteLine("Extended Strava-API.");
-
             if (args.Length < 3)
             {
                 Console.WriteLine("Please find the three or five needed arguments from the code 😛. Oh three are 5 Options at least on that! ");
                 return;
             }
-            String Username = args[0];
+
+            String Username = Environment.GetEnvironmentVariable("STRAVA_USER");
             SecureString Password = new SecureString();
-            foreach(var c in args[1])
+            foreach(var c in Environment.GetEnvironmentVariable("STRAVA_PWD"))
                 Password.AppendChar(c);
             Password.MakeReadOnly();
-            String AthleteId = args[2];
+            String AthleteId = args[0];
 
             StravaXApi stravaXApi;
-            if (Array.IndexOf(args,"--RunBrowserStack") >= 0)
-                stravaXApi = new StravaXApi(args[3],args[4]);
+            if (Environment.GetEnvironmentVariable("BROWSERSTACK")=="ON")
+                stravaXApi = new StravaXApi(Environment.GetEnvironmentVariable("BROWSERSTACK_USER"),Environment.GetEnvironmentVariable("BROWSERSTACK_PWD"));
             else
                 stravaXApi = new StravaXApi();
+            int FromYear=int.Parse(Environment.GetEnvironmentVariable("FROM_YEAR"));
+            int FromMonth=int.Parse(Environment.GetEnvironmentVariable("FROM_MONTH"));
+            int ToYear=int.Parse(Environment.GetEnvironmentVariable("TO_YEAR"));
+            int ToMonth=int.Parse(Environment.GetEnvironmentVariable("TO_MONTH"));
+            
             stravaXApi.ScreenshotsMonthActivities = Array.IndexOf(args,"--ScreenshotsMonthActivities") >= 0;
             stravaXApi.DownloadThumbnailsActivities = Array.IndexOf(args,"--DownloadThumbnailsActivities") >= 0;
             stravaXApi.DownloadImagesActivities = Array.IndexOf(args,"--DownloadImagesActivities") >= 0;
@@ -52,19 +57,13 @@ namespace Prototype
                 stravaXApi.signIn(Username,Password);
                 List<ActivityShort> ActivitiesList = new List<ActivityShort>();
 
-                try
-                {
-                    DateTime FirstActivityDate = stravaXApi.getActivityRange(AthleteId);
-                    System.Console.WriteLine($"First activity at {FirstActivityDate.Year}/{FirstActivityDate.Month}");                    
-                }
-                catch(Exception)
-                {
-                    System.Console.WriteLine($"Can't find first activity date.");                    
-                }
+                DateTime FirstActivityDate = stravaXApi.getActivityRange(AthleteId);
+                System.Console.WriteLine($"First activity at {FirstActivityDate.Year}/{FirstActivityDate.Month}");                    
 
-                for(int year=2019;year<=2019;year++)
+                DateTime now = DateTime.Now;
+                for(int year=FromYear;year<=ToYear;year++)
                 {
-                    for(int month=6;month<=6;month++)
+                    for(int month=FromMonth;month<=ToMonth;month++)
                     {
                         List<ActivityShort> ActivitiesMonthList;
                         try
@@ -79,26 +78,26 @@ namespace Prototype
                         }
                         ActivitiesList.AddRange(ActivitiesMonthList);
                     }
-                }
-
-                using (StravaXApiContext db = new StravaXApiContext())
-                {
-                    foreach(ActivityShort ActivityShort in ActivitiesList)
+                    using (StravaXApiContext db = new StravaXApiContext())
                     {
-                        Console.WriteLine($"JSON={ActivityShort.SerializePrettyPrint(ActivityShort)}");
-                        if (db.ActivityShortDB.Find(ActivityShort.ActivityId)==null)
+                        foreach(ActivityShort ActivityShort in ActivitiesList)
                         {
-                            db.ActivityShortDB.Add(ActivityShort);
-                            db.SaveChanges();
-                            Console.WriteLine($"Enterred Activities: {db.ActivityShortDB.OrderBy(b => b.ActivityId).Count()}");
+                            Console.WriteLine($"JSON={ActivityShort.SerializePrettyPrint(ActivityShort)}");
+                            if (db.ActivityShortDB.Find(ActivityShort.ActivityId)==null)
+                            {
+                                db.ActivityShortDB.Add(ActivityShort);
+                                db.SaveChanges();
+                                Console.WriteLine($"Enterred Activities: {db.ActivityShortDB.OrderBy(b => b.ActivityId).Count()}");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"{ActivityShort.ActivityId} allready in database");
+                            }
                         }
-                        else
-                        {
-                            Console.WriteLine($"{ActivityShort.ActivityId} allready in database");
-                        }
+                        Console.WriteLine($"total read = {ActivitiesList.Count}");
+                        Console.WriteLine($"total stored = {db.ActivityShortDB.OrderBy(b => b.ActivityId).Count()}");
+                        ActivitiesList.Clear();
                     }
-                    Console.WriteLine($"total read = {ActivitiesList.Count}");
-                    Console.WriteLine($"total stored = {db.ActivityShortDB.OrderBy(b => b.ActivityId).Count()}");
                 }
             }
             catch(Exception e)
@@ -110,6 +109,7 @@ namespace Prototype
                 stravaXApi.Dispose();
             }
         }
+
         StravaXApi()
         {
             ChromeOptions Options = new ChromeOptions();
@@ -154,7 +154,7 @@ namespace Prototype
             BrowserDriver.FindElement(By.Name("password")).SendKeys(new System.Net.NetworkCredential("", Password).Password);
             BrowserDriver.FindElement(By.Id("login-button")).Click();
             // Wait until Login is done.
-            new WebDriverWait(BrowserDriver, TimeSpan.FromSeconds(30)).Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementExists((By.XPath("//span[@class='app-icon-wrapper']"))));
+            new WebDriverWait(BrowserDriver, TimeSpan.FromSeconds(30)).Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementExists((By.XPath("//div[@class='media']"))));
         }
 
         /**
@@ -375,7 +375,7 @@ namespace Prototype
                     ActivityType ActivityType = parseActivityType(ActivityTypeElt.GetAttribute("class"));
 
                     DateTime ActivityTime = DateTime.Parse(ActivityTimeString.Substring(0,ActivityTimeString.Length-4));
-                    if (VerboseDebug) Console.WriteLine($"Id={ActivityId} Text={ActivityTitle} Type={ActivityType} Time={ActivityTime}");                    
+                    Console.WriteLine($"Id={ActivityId} Text={ActivityTitle} Type={ActivityType} Time={ActivityTime}");                    
                     var ActivityShort = new ActivityShort();
                     ActivityShort.AthleteId = AthleteId;
                     ActivityShort.ActivityId = ActivityId;

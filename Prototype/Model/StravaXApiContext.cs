@@ -1,3 +1,4 @@
+using System;
 using Microsoft.EntityFrameworkCore;
 
 // Announcing Entity Framework Core 3.0
@@ -53,6 +54,9 @@ namespace Prototype.Model
         public DbSet<ActivityShort> ActivityShortDB { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
-            => options.UseSqlite("Data Source=StravaXApi.db");
+            // => options.UseSqlite("Data Source=StravaXApi.db");
+            => options.UseSqlServer(Environment.GetEnvironmentVariable("CONNECTION_STRING"));
+            // => options.UseSqlServer(System.Configuration.Configuration["Data:db:ConnectionString"]);
+            
     }
 }
