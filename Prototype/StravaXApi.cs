@@ -20,46 +20,84 @@ namespace Prototype
         private Boolean DownloadImagesActivities = false;
         private Boolean VerboseDebug = false;
         private Boolean RunBrowserStack = true;
+        private string Username;
+        private SecureString Password;
         static void Main(string[] args)
         {
-            Console.WriteLine("Extended Strava-API.");
+            ReadActivitiesForAthlete(args);
+        }
+
+        static StravaXApi GetStravaXApi(string[] args)
+        {
+            String Username = Environment.GetEnvironmentVariable("STRAVA_USER");
+            SecureString Password = new SecureString();
+            foreach(var c in Environment.GetEnvironmentVariable("STRAVA_PWD"))
+                Password.AppendChar(c);
+            Password.MakeReadOnly();
+            StravaXApi stravaXApi;
+            if (Environment.GetEnvironmentVariable("BROWSERSTACK")=="ON")
+                stravaXApi = new StravaXApi(Environment.GetEnvironmentVariable("BROWSERSTACK_USER"),Environment.GetEnvironmentVariable("BROWSERSTACK_PWD"));
+            else
+                stravaXApi = new StravaXApi();
+            
+            stravaXApi.Username = Username;
+            stravaXApi.Password = Password;
+            stravaXApi.ScreenshotsMonthActivities = Array.IndexOf(args,"--ScreenshotsMonthActivities") >= 0;
+            stravaXApi.DownloadThumbnailsActivities = Array.IndexOf(args,"--DownloadThumbnailsActivities") >= 0;
+            stravaXApi.DownloadImagesActivities = Array.IndexOf(args,"--DownloadImagesActivities") >= 0;
+            stravaXApi.VerboseDebug = Array.IndexOf(args,"--VerboseDebug") >= 0;
+            stravaXApi.RunBrowserStack = Array.IndexOf(args,"--RunBrowserStack") >= 0;
+            return stravaXApi;
+        }
+        static void ReadAthleteConnectionsForAthlete(string[] args)
+        {
+            Console.WriteLine("Read athlete connections with Strava-X-API.");
             if (args.Length < 1)
             {
                 Console.WriteLine("Please find the needed arguments from the code 😛. Oh there are several options with environment variables! ");
                 return;
             }
 
-            String Username = Environment.GetEnvironmentVariable("STRAVA_USER");
-            SecureString Password = new SecureString();
-            foreach(var c in Environment.GetEnvironmentVariable("STRAVA_PWD"))
-                Password.AppendChar(c);
-            Password.MakeReadOnly();
             String AthleteId = args[0];
+            StravaXApi stravaXApi = GetStravaXApi(args);
 
-            StravaXApi stravaXApi;
-            if (Environment.GetEnvironmentVariable("BROWSERSTACK")=="ON")
-                stravaXApi = new StravaXApi(Environment.GetEnvironmentVariable("BROWSERSTACK_USER"),Environment.GetEnvironmentVariable("BROWSERSTACK_PWD"));
-            else
-                stravaXApi = new StravaXApi();
-            int FromYear=int.Parse(Environment.GetEnvironmentVariable("FROM_YEAR"));
-            int FromMonth=int.Parse(Environment.GetEnvironmentVariable("FROM_MONTH"));
-            int ToYear=int.Parse(Environment.GetEnvironmentVariable("TO_YEAR"));
-            int ToMonth=int.Parse(Environment.GetEnvironmentVariable("TO_MONTH"));
-            
-            stravaXApi.ScreenshotsMonthActivities = Array.IndexOf(args,"--ScreenshotsMonthActivities") >= 0;
-            stravaXApi.DownloadThumbnailsActivities = Array.IndexOf(args,"--DownloadThumbnailsActivities") >= 0;
-            stravaXApi.DownloadImagesActivities = Array.IndexOf(args,"--DownloadImagesActivities") >= 0;
-            stravaXApi.VerboseDebug = Array.IndexOf(args,"--VerboseDebug") >= 0;
-            stravaXApi.RunBrowserStack = Array.IndexOf(args,"--RunBrowserStack") >= 0;
-            
             try
             {
-                stravaXApi.signIn(Username,Password);
+                stravaXApi.signIn();
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine($"ERROR:{e.ToString()}");  
+            }
+            finally
+            {
+                stravaXApi.Dispose();
+            }
+        }
+        static void ReadActivitiesForAthlete(string[] args)
+        {
+            Console.WriteLine("Read athlete activities with Strava-X-API.");
+            if (args.Length < 1)
+            {
+                Console.WriteLine("Please find the needed arguments from the code 😛. Oh there are several options with environment variables! ");
+                return;
+            }
+
+            String AthleteId = args[0];
+            StravaXApi stravaXApi = GetStravaXApi(args);
+
+            try
+            {
+                stravaXApi.signIn();
                 List<ActivityShort> ActivitiesList = new List<ActivityShort>();
 
                 DateTime FirstActivityDate = stravaXApi.getActivityRange(AthleteId);
                 System.Console.WriteLine($"First activity at {FirstActivityDate.Year}/{FirstActivityDate.Month}");                    
 
+                int FromYear=int.Parse(Environment.GetEnvironmentVariable("FROM_YEAR"));
+                int FromMonth=int.Parse(Environment.GetEnvironmentVariable("FROM_MONTH"));
+                int ToYear=int.Parse(Environment.GetEnvironmentVariable("TO_YEAR"));
+                int ToMonth=int.Parse(Environment.GetEnvironmentVariable("TO_MONTH"));
                 DateTime now = DateTime.Now;
                 for(int year=FromYear;year<=ToYear;year++)
                 {
@@ -77,26 +115,26 @@ namespace Prototype
                             ActivitiesMonthList = stravaXApi.getActivities(AthleteId,$"{year:D4}",$"{month:D2}");
                         }
                         ActivitiesList.AddRange(ActivitiesMonthList);
-                    }
-                    using (StravaXApiContext db = new StravaXApiContext())
-                    {
-                        foreach(ActivityShort ActivityShort in ActivitiesList)
+                        using (StravaXApiContext db = new StravaXApiContext())
                         {
-                            Console.WriteLine($"JSON={ActivityShort.SerializePrettyPrint(ActivityShort)}");
-                            if (db.ActivityShortDB.Find(ActivityShort.ActivityId)==null)
+                            foreach(ActivityShort ActivityShort in ActivitiesList)
                             {
-                                db.ActivityShortDB.Add(ActivityShort);
-                                db.SaveChanges();
-                                Console.WriteLine($"Enterred Activities: {db.ActivityShortDB.OrderBy(b => b.ActivityId).Count()}");
+                                Console.WriteLine($"JSON={ActivityShort.SerializePrettyPrint(ActivityShort)}");
+                                if (db.ActivityShortDB.Find(ActivityShort.ActivityId)==null)
+                                {
+                                    db.ActivityShortDB.Add(ActivityShort);
+                                    db.SaveChanges();
+                                    Console.WriteLine($"Enterred Activities: {db.ActivityShortDB.OrderBy(b => b.ActivityId).Count()}");
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"{ActivityShort.ActivityId} allready in database");
+                                }
                             }
-                            else
-                            {
-                                Console.WriteLine($"{ActivityShort.ActivityId} allready in database");
-                            }
+                            Console.WriteLine($"total read = {ActivitiesList.Count}");
+                            Console.WriteLine($"total stored = {db.ActivityShortDB.OrderBy(b => b.ActivityId).Count()}");
+                            ActivitiesList.Clear();
                         }
-                        Console.WriteLine($"total read = {ActivitiesList.Count}");
-                        Console.WriteLine($"total stored = {db.ActivityShortDB.OrderBy(b => b.ActivityId).Count()}");
-                        ActivitiesList.Clear();
                     }
                 }
             }
@@ -145,7 +183,7 @@ namespace Prototype
             BrowserDriver = new RemoteWebDriver(new Uri("http://hub-cloud.browserstack.com/wd/hub/"), capability);
             BrowserDriver.Manage().Window.Maximize();
         }
-        public void signIn(String Username, SecureString Password)
+        public void signIn()
         {
             String url = $"https://www.strava.com/login";
             BrowserDriver.Navigate().GoToUrl(url);
