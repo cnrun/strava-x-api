@@ -64,6 +64,7 @@ namespace Prototype
             try
             {
                 stravaXApi.signIn();
+                var AthleteShortList = stravaXApi.getConnectedAthetes(AthleteId);
             }
             catch(Exception e)
             {
@@ -263,6 +264,16 @@ namespace Prototype
             // Subtract 3 days from Thursday to get Monday, which is the first weekday in ISO8601
             return result.AddDays(-3);
         }  
+        public List<AthleteShort> getConnectedAthetes(String AthleteId)
+        {
+            String url = $"https://www.strava.com/athletes/{AthleteId}";
+
+            BrowserDriver.Navigate().GoToUrl(url);            
+            Console.WriteLine($"open ${url}");
+
+            List<AthleteShort> AthleteShortList = new List<AthleteShort>();
+            return AthleteShortList;
+        }
 
         public List<ActivityShort> getActivities(String AthleteId, String Year, String Month)
         {
