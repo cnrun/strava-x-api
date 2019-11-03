@@ -24,7 +24,8 @@ namespace Prototype
         private SecureString Password;
         static void Main(string[] args)
         {
-            ReadActivitiesForAthlete(args);
+            // ReadActivitiesForAthlete(args);
+            ReadAthleteConnectionsForAthlete(args);
         }
 
         static StravaXApi GetStravaXApi(string[] args)
@@ -65,6 +66,7 @@ namespace Prototype
             {
                 stravaXApi.signIn();
                 var AthleteShortList = stravaXApi.getConnectedAthetes(AthleteId);
+                Console.WriteLine($"Athlete {AthleteId} has {AthleteShortList.Count} connections");
             }
             catch(Exception e)
             {
@@ -196,6 +198,11 @@ namespace Prototype
             new WebDriverWait(BrowserDriver, TimeSpan.FromSeconds(30)).Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementExists((By.XPath("//div[@class='media']"))));
         }
 
+        public void signOut()
+        {
+
+        }
+
         /**
          * Find the oldest possible date for an activity
          */
@@ -205,7 +212,7 @@ namespace Prototype
             String url = $"https://www.strava.com/athletes/{AthleteId}";
 
             BrowserDriver.Navigate().GoToUrl(url);            
-            Console.WriteLine($"open ${url}");
+            Console.WriteLine($"open {url}");
 
             // locate dates in the pulldown menu
             var Elts=BrowserDriver.FindElements(By.XPath("//div[@id='interval-graph']/div/div/ul/li/a"));
@@ -266,12 +273,65 @@ namespace Prototype
         }  
         public List<AthleteShort> getConnectedAthetes(String AthleteId)
         {
-            String url = $"https://www.strava.com/athletes/{AthleteId}";
+            string NextPageUrl = $"https://www.strava.com/athletes/{AthleteId}/follows?type=following";
 
-            BrowserDriver.Navigate().GoToUrl(url);            
-            Console.WriteLine($"open ${url}");
+            // BrowserDriver.Navigate().GoToUrl(NextPageUrl);            
 
             List<AthleteShort> AthleteShortList = new List<AthleteShort>();
+            DateTime CrawlDate = DateTime.Now;
+            do
+            {
+                Console.WriteLine($"open {NextPageUrl}");
+                BrowserDriver.Navigate().GoToUrl(NextPageUrl);            
+                var ConnectedAthleteElts=BrowserDriver.FindElements(By.XPath("//li[@data-athlete-id]"));
+                foreach (IWebElement ConnectedAthleteElt in ConnectedAthleteElts)
+                {
+                    try{
+                        var ConnectedAthleteId = ConnectedAthleteElt.GetAttribute("data-athlete-id");  
+                        Console.WriteLine($"ConnectedAthleteId {ConnectedAthleteId}");              
+                        var ConnectedAthleteName = ConnectedAthleteElt.FindElement(By.XPath("./div[@title]")).GetAttribute("title");
+                        Console.WriteLine($"ConnectedAthleteName {ConnectedAthleteName}");              
+                        var ConnectedAthleteAvatarUrl = ConnectedAthleteElt.FindElement(By.XPath(".//img[@class='avatar-img']")).GetAttribute("src");
+                        Console.WriteLine($"ConnectedAthleteAvatarUrl {ConnectedAthleteAvatarUrl}");              
+                        var ConnectedAthleteBadge = ConnectedAthleteElt.FindElement(By.XPath(".//div[@class='avatar-badge']/span/span")).GetAttribute("class");
+                        Console.WriteLine($"ConnectedAthleteBadge {ConnectedAthleteBadge}");              
+                        var ConnectedAthleteLocation = ConnectedAthleteElt.FindElement(By.XPath(".//div[@class='location mt-0']")).Text;
+                        Console.WriteLine($"ConnectedAthleteLocation {ConnectedAthleteLocation}");              
+                        var AthleteConnectionType = ConnectedAthleteElt.FindElement(By.XPath(".//button")).Text;
+                        Console.WriteLine($"AthleteConnectionType {AthleteConnectionType}");              
+
+                        var AthleteShort = new AthleteShort();
+                        AthleteShort.AthleteId = ConnectedAthleteId;
+                        AthleteShort.AthleteName = ConnectedAthleteName;
+                        AthleteShort.AthleteAvatarUrl = ConnectedAthleteAvatarUrl;
+                        AthleteShort.AthleteBadge = ConnectedAthleteBadge;
+                        AthleteShort.AthleteLocation = ConnectedAthleteLocation;
+                        AthleteShort.AthleteLastCrawled = CrawlDate;
+                        AthleteShortList.Add(AthleteShort);
+                        Console.WriteLine();              
+                        // AthleteShort.ConnectionType = ConnectedConnectionType;
+                    }
+                    catch (Exception e) when (e is WebDriverException || e is NotFoundException)
+                    {
+                        if (e is InvalidElementStateException || e is StaleElementReferenceException)
+                        {
+                            // Page seams to be incorrect loaded. Probably need to wait more.
+                            throw e;
+                        }
+                        Console.WriteLine($"Skip Activity at {NextPageUrl} Err:{e.Message}");
+                    }
+                }
+                try
+                {
+                    NextPageUrl = BrowserDriver.FindElement(By.XPath("//li[@class='next_page']/a")).GetAttribute("href");
+                    Console.WriteLine($"next page={NextPageUrl}");
+                }
+                catch(WebDriverException)
+                {
+                    NextPageUrl = "";
+                }
+            }
+            while(!string.IsNullOrEmpty(NextPageUrl));
             return AthleteShortList;
         }
 
@@ -280,7 +340,7 @@ namespace Prototype
             String url = $"https://www.strava.com/athletes/{AthleteId}#interval_type?chart_type=miles&interval_type=month&interval={Year}{Month}&year_offset=0";
 
             BrowserDriver.Navigate().GoToUrl(url);            
-            Console.WriteLine($"open ${url}");
+            Console.WriteLine($"open {url}");
             DateTime CrawlDate = DateTime.Now;
             // Should wait for element.
             Thread.Sleep(2000);

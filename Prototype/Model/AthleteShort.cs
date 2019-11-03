@@ -12,6 +12,9 @@ namespace Prototype.Model
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public string AthleteId { get; set; }
         public string AthleteName { get; set; }
+        public string AthleteAvatarUrl { get; set; }
+        public string AthleteBadge { get; set; }
+        public string AthleteLocation { get; set; }
         public AthleteShort()
         {
 
