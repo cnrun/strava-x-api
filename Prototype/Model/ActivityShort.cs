@@ -68,7 +68,6 @@ namespace Prototype.Model
                 GroupActivityListAsString = String.Join(",", value);
             }
         }
-
         public ActivityShort()
         {
         }

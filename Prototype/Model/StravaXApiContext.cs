@@ -52,11 +52,10 @@ namespace Prototype.Model
     public class StravaXApiContext : DbContext
     {
         public DbSet<ActivityShort> ActivityShortDB { get; set; }
-
+        public DbSet<AthleteShort> AthleteShortDB { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder options)
-            // => options.UseSqlite("Data Source=StravaXApi.db");
-            => options.UseSqlServer(Environment.GetEnvironmentVariable("CONNECTION_STRING"));
-            // => options.UseSqlServer(System.Configuration.Configuration["Data:db:ConnectionString"]);
-            
+            => options.UseSqlite("Data Source=StravaXApi.db").EnableSensitiveDataLogging();
+            // => options.UseSqlServer(Environment.GetEnvironmentVariable("CONNECTION_STRING"));
+            // => options.UseSqlServer(System.Configuration.Configuration["Data:db:ConnectionString"]);            
     }
 }

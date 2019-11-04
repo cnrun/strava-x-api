@@ -2,6 +2,7 @@ using System;
 using System.Text.Json;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
 
 namespace Prototype.Model
 {    
@@ -15,9 +16,12 @@ namespace Prototype.Model
         public string AthleteAvatarUrl { get; set; }
         public string AthleteBadge { get; set; }
         public string AthleteLocation { get; set; }
+
+        public ICollection<AthleteShort> FollowingCollection { get; set; }
+
         public AthleteShort()
         {
-
+            FollowingCollection=new List<AthleteShort>();
         }
         override public string ToString()
         {

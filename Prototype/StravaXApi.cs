@@ -60,13 +60,85 @@ namespace Prototype
             }
 
             String AthleteId = args[0];
-            StravaXApi stravaXApi = GetStravaXApi(args);
+            StravaXApi stravaXApi = null; // GetStravaXApi(args);
 
             try
             {
-                stravaXApi.signIn();
-                var AthleteShortList = stravaXApi.getConnectedAthetes(AthleteId);
-                Console.WriteLine($"Athlete {AthleteId} has {AthleteShortList.Count} connections");
+//                stravaXApi.signIn();
+                AthleteShort AthleteMasterShort;
+                using (StravaXApiContext db = new StravaXApiContext())
+                {
+                    AthleteMasterShort = db.AthleteShortDB.Find(AthleteId);
+                    if (AthleteMasterShort==null)
+                    {
+                        AthleteMasterShort = new AthleteShort();
+                        AthleteMasterShort.AthleteId = AthleteId;
+                        var EntityEntry = db.AthleteShortDB.Add(AthleteMasterShort);
+                        AthleteMasterShort = EntityEntry.Entity;
+                        db.SaveChanges();
+                    }
+                    else
+                    {
+                        // Eagerly Loading prevent the list to be loaded at creation
+                        // https://docs.microsoft.com/de-de/ef/ef6/querying/related-data
+                        db.Entry(AthleteMasterShort).Collection(p => p.FollowingCollection).Load();
+                        string ConnectId=$"{AthleteId}-AthleteConnectedShort";
+//                        db.AthleteShortDB.Find(ConnectId+"s");
+                        Console.WriteLine($"Athlete {AthleteMasterShort.AthleteId} allready enterred with {AthleteMasterShort.FollowingCollection.Count} connections {string.Join(',',AthleteMasterShort.FollowingCollection)}");
+                        AthleteShort AthleteConnectedShort = db.AthleteShortDB.Find(ConnectId);
+                        if (AthleteConnectedShort==null)
+                        {
+//                            var _AthleteConnectedShort = new AthleteShort();
+//                            _AthleteConnectedShort.AthleteId = ConnectId;
+//                            var _AthleteConnectedShortEntityEntry = db.AthleteShortDB.Add(_AthleteConnectedShort);
+//                            AthleteConnectedShort = _AthleteConnectedShortEntityEntry.Entity;
+//                            Console.WriteLine($"Athlete {AthleteConnectedShort.AthleteId} created with {AthleteConnectedShort.FollowingCollection.Count} connections");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Athlete {AthleteConnectedShort.AthleteId} allready enterred with {AthleteConnectedShort.FollowingCollection.Count} connections");
+                        }
+//                        AthleteMasterShort.FollowingCollection.Add(AthleteConnectedShort);
+                        // var EntityEntry = db.Add(AthleteMasterShort);
+                        // AthleteMasterShort = EntityEntry.Entity;
+                        Console.WriteLine($"Athlete {AthleteMasterShort.AthleteId} enterred with {AthleteMasterShort.FollowingCollection.Count} connections {string.Join(',',AthleteMasterShort.FollowingCollection)}");
+                        db.SaveChanges();
+                    }
+                    return;
+
+                    var AthleteShortList = stravaXApi.getConnectedAthetes(AthleteMasterShort);
+                    Console.WriteLine($"Athlete {AthleteId} has {AthleteShortList.Count} connections");
+
+                    foreach(AthleteShort _AthleteShort in AthleteShortList)
+                    {
+                        AthleteShort AthleteShortfromDb;
+                        // Console.WriteLine($"JSON={ActivityShort.SerializePrettyPrint(ActivityShort)}");
+                        AthleteShortfromDb = db.AthleteShortDB.Find(_AthleteShort.AthleteId);
+                        if (AthleteShortfromDb==null)
+                        {
+                            AthleteShortfromDb = db.AthleteShortDB.Add(_AthleteShort).Entity;
+                        }
+                        else
+                        {
+                            Console.WriteLine($"{AthleteShortfromDb.AthleteId} allready in database");
+                        }
+                        Console.WriteLine($"Enterred Activities: {db.AthleteShortDB.OrderBy(b => b.AthleteId).Count()}");
+                        if (!AthleteMasterShort.FollowingCollection.Contains(_AthleteShort))
+                        {
+                            AthleteMasterShort.FollowingCollection.Add(AthleteShortfromDb);
+                            Console.WriteLine($"athlete {AthleteMasterShort.AthleteId} has {AthleteMasterShort.FollowingCollection.Count} connection(s). Added: {_AthleteShort.AthleteId}");
+//                            db.SaveChanges();
+                        }
+                        else
+                        {
+                            Console.WriteLine($"athlete {AthleteMasterShort.AthleteId} already connected to {_AthleteShort.AthleteId} with {AthleteMasterShort.FollowingCollection.Count} connection(s)");
+                        }
+                    }
+                    Console.WriteLine($"total read = {AthleteShortList.Count}");
+                    Console.WriteLine($"total stored = {db.AthleteShortDB.OrderBy(b => b.AthleteId).Count()}");
+                    AthleteShortList.Clear();
+                    db.SaveChanges();
+                }
             }
             catch(Exception e)
             {
@@ -74,7 +146,7 @@ namespace Prototype
             }
             finally
             {
-                stravaXApi.Dispose();
+//                stravaXApi.Dispose();
             }
         }
         static void ReadActivitiesForAthlete(string[] args)
@@ -271,12 +343,11 @@ namespace Prototype
             // Subtract 3 days from Thursday to get Monday, which is the first weekday in ISO8601
             return result.AddDays(-3);
         }  
-        public List<AthleteShort> getConnectedAthetes(String AthleteId)
+        public List<AthleteShort> getConnectedAthetes(AthleteShort Athlete)
         {
-            string NextPageUrl = $"https://www.strava.com/athletes/{AthleteId}/follows?type=following";
+            string NextPageUrl = $"https://www.strava.com/athletes/{Athlete.AthleteId}/follows?type=following";
 
             // BrowserDriver.Navigate().GoToUrl(NextPageUrl);            
-
             List<AthleteShort> AthleteShortList = new List<AthleteShort>();
             DateTime CrawlDate = DateTime.Now;
             do

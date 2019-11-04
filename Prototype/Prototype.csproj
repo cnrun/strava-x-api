@@ -9,7 +9,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <!-- <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="3.0.0" /> -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="3.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.0.0" />
     <PackageReference Include="Selenium.WebDriver.ChromeDriver" Version="78.0.3904.7000" />
     <PackageReference Include="Selenium.Support" Version="3.141.0" />

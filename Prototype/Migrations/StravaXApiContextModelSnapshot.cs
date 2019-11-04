@@ -2,7 +2,6 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Prototype.Model;
 
@@ -15,37 +14,73 @@ namespace Prototype.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "3.0.0")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128)
-                .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                .HasAnnotation("ProductVersion", "3.0.0");
 
             modelBuilder.Entity("Prototype.Model.ActivityShort", b =>
                 {
                     b.Property<string>("ActivityId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("ActivityDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ActivityImageMapUrl")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("ActivityLastCrawled")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ActivityTitle")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("ActivityType")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("AthleteId")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("ActivityId");
 
                     b.ToTable("ActivityShortDB");
+                });
+
+            modelBuilder.Entity("Prototype.Model.AthleteShort", b =>
+                {
+                    b.Property<string>("AthleteId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AthleteAvatarUrl")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AthleteBadge")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("AthleteLastCrawled")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AthleteLocation")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AthleteName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AthleteShortAthleteId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("AthleteId");
+
+                    b.HasIndex("AthleteShortAthleteId");
+
+                    b.ToTable("AthleteShortDB");
+                });
+
+            modelBuilder.Entity("Prototype.Model.AthleteShort", b =>
+                {
+                    b.HasOne("Prototype.Model.AthleteShort", null)
+                        .WithMany("FollowingCollection")
+                        .HasForeignKey("AthleteShortAthleteId");
                 });
 #pragma warning restore 612, 618
         }
