@@ -45,6 +45,34 @@ namespace Prototype.Migrations
                     b.ToTable("ActivityShortDB");
                 });
 
+            modelBuilder.Entity("Prototype.Model.AthleteConnection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AthleteShortAthleteId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ConnectionState")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FromId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ToId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Type")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AthleteShortAthleteId");
+
+                    b.ToTable("AthleteConnection");
+                });
+
             modelBuilder.Entity("Prototype.Model.AthleteShort", b =>
                 {
                     b.Property<string>("AthleteId")
@@ -66,20 +94,15 @@ namespace Prototype.Migrations
                     b.Property<string>("AthleteName")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("AthleteShortAthleteId")
-                        .HasColumnType("TEXT");
-
                     b.HasKey("AthleteId");
-
-                    b.HasIndex("AthleteShortAthleteId");
 
                     b.ToTable("AthleteShortDB");
                 });
 
-            modelBuilder.Entity("Prototype.Model.AthleteShort", b =>
+            modelBuilder.Entity("Prototype.Model.AthleteConnection", b =>
                 {
                     b.HasOne("Prototype.Model.AthleteShort", null)
-                        .WithMany("FollowingCollection")
+                        .WithMany("Connections")
                         .HasForeignKey("AthleteShortAthleteId");
                 });
 #pragma warning restore 612, 618

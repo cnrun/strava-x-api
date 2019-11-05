@@ -6,26 +6,25 @@ using System.Collections.Generic;
 
 namespace Prototype.Model
 {    
-    public class AthleteShort
+    public class AthleteConnection
     {
-        public DateTime AthleteLastCrawled { get; set; }
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public string AthleteId { get; set; }
-        public string AthleteName { get; set; }
-        public string AthleteAvatarUrl { get; set; }
-        public string AthleteBadge { get; set; }
-        public string AthleteLocation { get; set; }
+        // Was a long search, do not really understand why just works with this Id
+        // Without any anotations. I should be missing something in ET6 specs...
+        // https://stackoverflow.com/a/55675811/281188
+        public Guid Id { get; set; }
 
-        public ICollection<AthleteConnection> Connections { get; set; }
+        // 'Following' or 'Followers'?
+        public String Type { get; set; }
+        // 'Request to Follow' or 'Follow'?
+        public String ConnectionState { get; set; }
+        // who is connected
+        public string FromId { get; set; }
+        // with whom is he connected
+        public string ToId { get; set; }
 
-        public AthleteShort()
-        {
-            Connections=new List<AthleteConnection>();
-        }
         override public string ToString()
         {
-            return $"athlete:{AthleteId} name:{AthleteName}";
+            return $"{FromId} {Type}➡️{ConnectionState} {ToId}";
         }
         public string Serialize(ActivityShort value)
         {
