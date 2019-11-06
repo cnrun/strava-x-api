@@ -9,9 +9,7 @@ namespace Prototype.Model
 {    
     public class ActivityRangeQuery
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public string QueryId { get; set; }
+        public Guid Id { get; set; }
         public string AthleteId { get; set; }
         public DateTime DateFrom { get; set; }
         public DateTime DateTo { get; set; }

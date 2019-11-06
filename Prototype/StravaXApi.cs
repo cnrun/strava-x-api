@@ -29,8 +29,9 @@ namespace Prototype
         private SecureString Password;
         static void Main(string[] args)
         {
-            // ReadActivitiesForAthlete(args);
-            Prototype.Tools.AthletesCrawler.ReadAthleteConnectionsForAthlete(args);
+            // Prototype.Tools.ActivitiesCrawler.ReadActivitiesForAthlete(args);
+            // Prototype.Tools.AthletesCrawler.ReadAthleteConnectionsForAthlete(args);
+            Prototype.Tools.QueriesGenerator.WriteQueriesForAthlete(args);
         }
 
         public static StravaXApi GetStravaXApi(string[] args)
