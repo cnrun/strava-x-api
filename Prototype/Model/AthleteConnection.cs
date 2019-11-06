@@ -1,8 +1,5 @@
 using System;
 using System.Text.Json;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
-using System.Collections.Generic;
 
 namespace Prototype.Model
 {    
