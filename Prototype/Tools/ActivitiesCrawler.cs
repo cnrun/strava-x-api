@@ -36,8 +36,10 @@ namespace Prototype.Tools
                 DateTime now = DateTime.Now;
                 for(int year=FromYear;year<=ToYear;year++)
                 {
-                    for(int month=FromMonth;month<=ToMonth;month++)
+                    for(int month=01;month<=12;month++)
                     {
+                        if ((year<=FromYear && month<FromMonth) || (year>=ToYear && month>ToMonth))
+                            continue;
                         List<ActivityShort> ActivitiesMonthList;
                         try
                         {
