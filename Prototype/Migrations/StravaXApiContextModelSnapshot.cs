@@ -56,6 +56,9 @@ namespace Prototype.Migrations
                     b.Property<string>("AthleteId")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("StatShortString")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("ActivityId");
 
                     b.ToTable("ActivityShortDB");

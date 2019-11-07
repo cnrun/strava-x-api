@@ -18,6 +18,7 @@ namespace Prototype.Model
         public string ActivityTitle { get; set; }
         public string ActivityImageMapUrl { get; set; }
         public string AthleteId { get; set; }
+        public string StatShortString { get; set; }
 
         // List as string: https://stackoverflow.com/a/31648135
         [Column]
@@ -73,7 +74,7 @@ namespace Prototype.Model
         }
         override public string ToString()
         {
-            return $"athlete:{AthleteId} activity:{ActivityId} text:'{ActivityTitle}' type:{ActivityType} date:{ActivityDate} Map {ActivityImageMapUrl} Images {ActivityThumbnailsList.Count}/{ActivityImagesList.Count} Group {GroupActivityList.Count}/{GroupAthleteList.Count}";
+            return $"athlete:{AthleteId} activity:{ActivityId} text:'{ActivityTitle}' type:{ActivityType} stats:{StatShortString} date:{ActivityDate} Map {ActivityImageMapUrl} Images {ActivityThumbnailsList.Count}/{ActivityImagesList.Count} Group {GroupActivityList.Count}/{GroupAthleteList.Count}";
         }
         public string Serialize(ActivityShort value)
         {

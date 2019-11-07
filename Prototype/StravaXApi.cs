@@ -29,9 +29,9 @@ namespace Prototype
         private SecureString Password;
         static void Main(string[] args)
         {
-            // Prototype.Tools.ActivitiesCrawler.ReadActivitiesForAthlete(args);
+            Prototype.Tools.ActivitiesCrawler.ReadActivitiesForAthlete(args);
             // Prototype.Tools.AthletesCrawler.ReadAthleteConnectionsForAthlete(args);
-            Prototype.Tools.QueriesGenerator.WriteQueriesForAthlete(args);
+            // Prototype.Tools.QueriesGenerator.WriteQueriesForAthlete(args);
         }
 
         public static StravaXApi GetStravaXApi(string[] args)
@@ -387,6 +387,12 @@ namespace Prototype
                         ActivityImageMapUrl=null;
                     }
 
+                    // get stats short description as text
+                    string ActivityStatShort;
+                    IWebElement StatShortElt;
+                    StatShortElt = ActivityNumberElt.FindElement(By.XPath(".//ul[contains(@class,'list-stats')]"));
+                    ActivityStatShort=StatShortElt.Text;
+
                     // Retrieve the activity class, with that it's poosible to know the activity type
                     var ActivityTypeElt = Elt.FindElement(By.XPath("./span/span"));
                     ActivityType ActivityType = parseActivityType(ActivityTypeElt.GetAttribute("class"));
@@ -398,6 +404,7 @@ namespace Prototype
                     ActivityShort.ActivityId = ActivityId;
                     ActivityShort.ActivityTitle = ActivityTitle;
                     ActivityShort.ActivityType = ActivityType;
+                    ActivityShort.StatShortString = ActivityStatShort;
                     ActivityShort.ActivityDate = ActivityTime;
                     ActivityShort.ActivityLastCrawled = CrawlDate;
                     ActivityShort.ActivityImageMapUrl=ActivityImageMapUrl;
