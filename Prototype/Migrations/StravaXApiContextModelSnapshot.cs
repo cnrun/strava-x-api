@@ -16,6 +16,22 @@ namespace Prototype.Migrations
             modelBuilder
                 .HasAnnotation("ProductVersion", "3.0.0");
 
+            modelBuilder.Entity("Prototype.Model.ActivityRangeQuery", b =>
+                {
+                    b.Property<string>("AthleteId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("DateFrom")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("DateTo")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("AthleteId", "DateFrom", "DateTo");
+
+                    b.ToTable("ActivityQueriesDB");
+                });
+
             modelBuilder.Entity("Prototype.Model.ActivityShort", b =>
                 {
                     b.Property<string>("ActivityId")

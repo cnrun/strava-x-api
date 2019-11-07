@@ -9,9 +9,13 @@ namespace Prototype.Model
 {    
     public class ActivityRangeQuery
     {
-        public Guid Id { get; set; }
+        // See: https://docs.microsoft.com/en-us/ef/core/modeling/keys
+        // Key order has been defined in StravaXApiContext.
+        [Key]
         public string AthleteId { get; set; }
+        [Key]
         public DateTime DateFrom { get; set; }
+        [Key]
         public DateTime DateTo { get; set; }
         public ActivityRangeQuery()
         {
@@ -19,7 +23,7 @@ namespace Prototype.Model
         }
         override public string ToString()
         {
-            return $"query activities for:{AthleteId} in[{DateFrom}-{DateTo}]";
+            return $"query activities for:{AthleteId} in [{DateFrom}-{DateTo}]";
         }
         public string Serialize(ActivityShort value)
         {

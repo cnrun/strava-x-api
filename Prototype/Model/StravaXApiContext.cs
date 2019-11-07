@@ -59,5 +59,7 @@ namespace Prototype.Model
             => options.UseSqlite("Data Source=StravaXApi.db").EnableSensitiveDataLogging();
             // => options.UseSqlServer(Environment.GetEnvironmentVariable("CONNECTION_STRING"));
             // => options.UseSqlServer(System.Configuration.Configuration["Data:db:ConnectionString"]);            
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+            => modelBuilder.Entity<ActivityRangeQuery>().HasKey(c => new { c.AthleteId, c.DateFrom, c.DateTo });
     }
 }

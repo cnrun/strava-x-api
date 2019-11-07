@@ -38,39 +38,21 @@ namespace Prototype.Tools
                     // first year
                     for(int month=FromMonth;month<=12;month++)
                     {
-                        ActivityRangeQuery query = new ActivityRangeQuery();
-                        query.AthleteId=AthleteId;
-                        query.DateFrom=new DateTime(FromYear,month,1);
-                        query.DateTo=new DateTime(FromYear,month,1).AddMonths(1).AddDays(-1); // last day of the month
-                        db.ActivityQueriesDB.Add(query);
-                        db.SaveChanges();
-
-                        Console.WriteLine($"query for {month}/{FromYear}");
+                        AddQuery(db, AthleteId, new DateTime(FromYear,month,1), new DateTime(FromYear,month,1).AddMonths(1).AddDays(-1));
                     }
                     // all years after
                     for(int year=FromYear+1;year<=ToYear-1;year++)
                     {
                         for(int month=01;month<=12;month++)
                         {
-                            ActivityRangeQuery query = new ActivityRangeQuery();
-                            query.AthleteId=AthleteId;
-                            query.DateFrom=new DateTime(FromYear,month,1);
-                            query.DateTo=new DateTime(FromYear,month,1).AddMonths(1).AddDays(-1); // last day of the month
-                            db.ActivityQueriesDB.Add(query);
-                            db.SaveChanges();
-                            Console.WriteLine($"query for {month}/{year}");
+                            AddQuery(db, AthleteId, new DateTime(year,month,1), new DateTime(year,month,1).AddMonths(1).AddDays(-1));
                         }
                     }
                     // last year
                     for(int month=01;month<=ToMonth;month++)
                     {
-                        ActivityRangeQuery query = new ActivityRangeQuery();
-                        query.AthleteId=AthleteId;
-                        query.DateFrom=new DateTime(FromYear,month,1);
-                        query.DateTo=new DateTime(FromYear,month,1).AddMonths(1).AddDays(-1); // last day of the month
-                        db.ActivityQueriesDB.Add(query);
-                        db.SaveChanges();
-                        Console.WriteLine($"query for {month}/{ToYear}");
+                        // from first day of month to last day of the month
+                        AddQuery(db, AthleteId, new DateTime(ToYear,month,1), new DateTime(ToYear,month,1).AddMonths(1).AddDays(-1));
                     }
                     Console.WriteLine($"Enterred queries: {db.ActivityQueriesDB.Count()}");
                 }
@@ -83,6 +65,20 @@ namespace Prototype.Tools
             {
                 stravaXApi.Dispose();
             }
+        }
+        static private void AddQuery(StravaXApiContext db, String AthleteId, DateTime DateFrom, DateTime DateTo)
+        {
+            if (db.ActivityQueriesDB.Find(AthleteId,DateFrom,DateTo)==null)
+            {
+                ActivityRangeQuery query = new ActivityRangeQuery();
+                query.AthleteId=AthleteId;
+                query.DateFrom=DateFrom;
+                query.DateTo=DateTo;
+                db.ActivityQueriesDB.Add(query);
+                db.SaveChanges();
+                Console.WriteLine($"add query for {query}");
+            }
+            
         }
     }
 }
