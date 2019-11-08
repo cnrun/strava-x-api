@@ -29,8 +29,8 @@ namespace Prototype
         private SecureString Password;
         static void Main(string[] args)
         {
-            Prototype.Tools.ActivitiesCrawler.ReadActivitiesForAthlete(args);
-            // Prototype.Tools.AthletesCrawler.ReadAthleteConnectionsForAthlete(args);
+            // Prototype.Tools.ActivitiesCrawler.ReadActivitiesForAthlete(args);
+            Prototype.Tools.AthletesCrawler.ReadAthleteConnectionsForAthlete(args);
             // Prototype.Tools.QueriesGenerator.WriteQueriesForAthlete(args);
         }
 
@@ -194,17 +194,17 @@ namespace Prototype
                 {
                     try{
                         var ConnectedAthleteId = ConnectedAthleteElt.GetAttribute("data-athlete-id");  
-                        Console.WriteLine($"ConnectedAthleteId {ConnectedAthleteId}");              
+                        if (VerboseDebug) Console.WriteLine($"ConnectedAthleteId {ConnectedAthleteId}");              
                         var ConnectedAthleteName = ConnectedAthleteElt.FindElement(By.XPath("./div[@title]")).GetAttribute("title");
-                        Console.WriteLine($"ConnectedAthleteName {ConnectedAthleteName}");              
+                        if (VerboseDebug) Console.WriteLine($"ConnectedAthleteName {ConnectedAthleteName}");              
                         var ConnectedAthleteAvatarUrl = ConnectedAthleteElt.FindElement(By.XPath(".//img[@class='avatar-img']")).GetAttribute("src");
-                        Console.WriteLine($"ConnectedAthleteAvatarUrl {ConnectedAthleteAvatarUrl}");              
+                        if (VerboseDebug) Console.WriteLine($"ConnectedAthleteAvatarUrl {ConnectedAthleteAvatarUrl}");              
                         var ConnectedAthleteBadge = ConnectedAthleteElt.FindElement(By.XPath(".//div[@class='avatar-badge']/span/span")).GetAttribute("class");
-                        Console.WriteLine($"ConnectedAthleteBadge {ConnectedAthleteBadge}");              
+                        if (VerboseDebug) Console.WriteLine($"ConnectedAthleteBadge {ConnectedAthleteBadge}");              
                         var ConnectedAthleteLocation = ConnectedAthleteElt.FindElement(By.XPath(".//div[@class='location mt-0']")).Text;
-                        Console.WriteLine($"ConnectedAthleteLocation {ConnectedAthleteLocation}");              
+                        if (VerboseDebug) Console.WriteLine($"ConnectedAthleteLocation {ConnectedAthleteLocation}");              
                         var AthleteConnectionType = ConnectedAthleteElt.FindElement(By.XPath(".//button")).Text;
-                        Console.WriteLine($"AthleteConnectionType {AthleteConnectionType}");              
+                        if (VerboseDebug) Console.WriteLine($"AthleteConnectionType {AthleteConnectionType}");              
 
                         var AthleteShort = new ConnectedAthlete();
                         AthleteShort.AthleteId = ConnectedAthleteId;
@@ -214,7 +214,7 @@ namespace Prototype
                         AthleteShort.AthleteLocation = ConnectedAthleteLocation;
                         AthleteShort.AthleteLastCrawled = CrawlDate;
                         AthleteShortList.Add(AthleteShort);
-                        Console.WriteLine();              
+                        Console.WriteLine($"add {AthleteShort}");              
                         // We also have informations about the connection state
                         AthleteShort.ConnectionState = AthleteConnectionType;
                     }
@@ -225,13 +225,13 @@ namespace Prototype
                             // Page seams to be incorrect loaded. Probably need to wait more.
                             throw e;
                         }
-                        Console.WriteLine($"Skip Activity at {NextPageUrl} Err:{e.Message}");
+                        Console.WriteLine($"Skip athlete at {NextPageUrl} Err:{e.Message}");
                     }
                 }
                 try
                 {
                     NextPageUrl = BrowserDriver.FindElement(By.XPath("//li[@class='next_page']/a")).GetAttribute("href");
-                    Console.WriteLine($"next page={NextPageUrl}");
+                    if (VerboseDebug) Console.WriteLine($"next page={NextPageUrl}");
                 }
                 catch(WebDriverException)
                 {
@@ -239,7 +239,7 @@ namespace Prototype
                 }
                 PageCount++;
             }
-            while(!string.IsNullOrEmpty(NextPageUrl) && PageCount<4);
+            while(!string.IsNullOrEmpty(NextPageUrl));
             return AthleteShortList;
         }
 
