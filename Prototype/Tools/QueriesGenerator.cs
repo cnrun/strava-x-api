@@ -9,7 +9,7 @@ namespace Prototype.Tools
 {    
     public class QueriesGenerator
     {
-        static public void WriteQueriesForAthlete(string[] args)
+        static public void WriteQueriesForAthletes(string[] args)
         {
             Console.WriteLine("Create range queries.");
             if (args.Length < 1)
@@ -17,54 +17,63 @@ namespace Prototype.Tools
                 Console.WriteLine("Please find the needed arguments from the code 😛. Oh there are several options with environment variables! ");
                 return;
             }
-
-            String AthleteId = args[0];
-            StravaXApi stravaXApi = StravaXApi.GetStravaXApi(args);
-
-            try
+            using (StravaXApiContext db = new StravaXApiContext())
             {
-                stravaXApi.signIn();
-                DateTime FirstActivityDate = stravaXApi.getActivityRange(AthleteId);
-                System.Console.WriteLine($"First activity at {FirstActivityDate.Year}/{FirstActivityDate.Month}");                    
-                DateTime Now = DateTime.Now;
-
-                int FromYear=FirstActivityDate.Year;
-                int FromMonth=FirstActivityDate.Month;
-                int ToYear=Now.Year;
-                int ToMonth=Now.Month;
-                using (StravaXApiContext db = new StravaXApiContext())
+                StravaXApi stravaXApi = StravaXApi.GetStravaXApi(args);
+                try
                 {
-                    Console.WriteLine($"Enterred queries: {db.ActivityQueriesDB.Count()}");
-                    // first year
-                    for(int month=FromMonth;month<=12;month++)
+
+                    var AllAthletes = db.AthleteShortDB;
+                    foreach(AthleteShort Athlete in AllAthletes)
                     {
-                        AddQuery(db, AthleteId, new DateTime(FromYear,month,1), new DateTime(FromYear,month,1).AddMonths(1).AddDays(-1));
+                        Console.WriteLine($"Athlete:{Athlete}");
+                        WriteQueriesForAthlete(stravaXApi, db, Athlete.AthleteId);
                     }
-                    // all years after
-                    for(int year=FromYear+1;year<=ToYear-1;year++)
-                    {
-                        for(int month=01;month<=12;month++)
-                        {
-                            AddQuery(db, AthleteId, new DateTime(year,month,1), new DateTime(year,month,1).AddMonths(1).AddDays(-1));
-                        }
-                    }
-                    // last year
-                    for(int month=01;month<=ToMonth;month++)
-                    {
-                        // from first day of month to last day of the month
-                        AddQuery(db, AthleteId, new DateTime(ToYear,month,1), new DateTime(ToYear,month,1).AddMonths(1).AddDays(-1));
-                    }
-                    Console.WriteLine($"Enterred queries: {db.ActivityQueriesDB.Count()}");
+                }
+                catch(Exception e)
+                {
+                    Console.WriteLine($"ERROR:{e.ToString()}");  
+                }
+                finally
+                {
+                    stravaXApi.Dispose();
                 }
             }
-            catch(Exception e)
+
+        }
+
+        static void WriteQueriesForAthlete(StravaXApi stravaXApi, StravaXApiContext db, string AthleteId)
+        {
+            stravaXApi.signIn();
+            DateTime FirstActivityDate = stravaXApi.getActivityRange(AthleteId);
+            System.Console.WriteLine($"First activity at {FirstActivityDate.Year}/{FirstActivityDate.Month}");                    
+            DateTime Now = DateTime.Now;
+
+            int FromYear=FirstActivityDate.Year;
+            int FromMonth=FirstActivityDate.Month;
+            int ToYear=Now.Year;
+            int ToMonth=Now.Month;
+            Console.WriteLine($"Enterred queries: {db.ActivityQueriesDB.Count()}");
+            // first year
+            for(int month=FromMonth;month<=12;month++)
             {
-                Console.WriteLine($"ERROR:{e.ToString()}");  
+                AddQuery(db, AthleteId, new DateTime(FromYear,month,1), new DateTime(FromYear,month,1).AddMonths(1).AddDays(-1));
             }
-            finally
+            // all years after
+            for(int year=FromYear+1;year<=ToYear-1;year++)
             {
-                stravaXApi.Dispose();
+                for(int month=01;month<=12;month++)
+                {
+                    AddQuery(db, AthleteId, new DateTime(year,month,1), new DateTime(year,month,1).AddMonths(1).AddDays(-1));
+                }
             }
+            // last year
+            for(int month=01;month<=ToMonth;month++)
+            {
+                // from first day of month to last day of the month
+                AddQuery(db, AthleteId, new DateTime(ToYear,month,1), new DateTime(ToYear,month,1).AddMonths(1).AddDays(-1));
+            }
+            Console.WriteLine($"Enterred queries: {db.ActivityQueriesDB.Count()}");
         }
         static private void AddQuery(StravaXApiContext db, String AthleteId, DateTime DateFrom, DateTime DateTo)
         {
@@ -77,8 +86,7 @@ namespace Prototype.Tools
                 db.ActivityQueriesDB.Add(query);
                 db.SaveChanges();
                 Console.WriteLine($"add query for {query}");
-            }
-            
+            }            
         }
     }
 }

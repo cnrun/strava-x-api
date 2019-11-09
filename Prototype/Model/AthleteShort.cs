@@ -25,7 +25,7 @@ namespace Prototype.Model
         }
         override public string ToString()
         {
-            return $"athlete:{AthleteId} name:{AthleteName}";
+            return $"Id:{AthleteId} name:{AthleteName}";
         }
         public string Serialize(ActivityShort value)
         {
