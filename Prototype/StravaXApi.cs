@@ -32,7 +32,8 @@ namespace Prototype
             // Prototype.Tools.ActivitiesCrawler.ReadActivitiesForAthlete(args);
             // Prototype.Tools.AthletesCrawler.ReadAthleteConnectionsForAthlete(args);
             // Prototype.Tools.QueriesGenerator.WriteQueriesForAthlete(args);
-            Prototype.Tools.QueriesGenerator.WriteQueriesForAthletes(args);
+            // Prototype.Tools.QueriesGenerator.WriteQueriesForAthletes(args);
+            Prototype.Tools.QueryActivities.SendQueriesForActivities(args);
         }
 
         public static StravaXApi GetStravaXApi(string[] args)

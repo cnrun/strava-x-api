@@ -1,9 +1,6 @@
 using System;
-using System.Threading;
 using System.Linq;
-using OpenQA.Selenium;
 using Prototype.Model;
-using System.Collections.Generic;
 
 namespace Prototype.Tools
 {    
@@ -20,14 +17,21 @@ namespace Prototype.Tools
             using (StravaXApiContext db = new StravaXApiContext())
             {
                 StravaXApi stravaXApi = StravaXApi.GetStravaXApi(args);
+                stravaXApi.signIn();
                 try
                 {
-
                     var AllAthletes = db.AthleteShortDB;
                     foreach(AthleteShort Athlete in AllAthletes)
                     {
                         Console.WriteLine($"Athlete:{Athlete}");
-                        WriteQueriesForAthlete(stravaXApi, db, Athlete.AthleteId);
+                        try
+                        {
+                            WriteQueriesForAthlete(stravaXApi, db, Athlete.AthleteId);
+                        }
+                        catch(Exception e)
+                        {
+                            Console.WriteLine($"SKIP:{Athlete.AthleteId} {e.ToString()}");  
+                        }
                     }
                 }
                 catch(Exception e)
@@ -44,7 +48,6 @@ namespace Prototype.Tools
 
         static void WriteQueriesForAthlete(StravaXApi stravaXApi, StravaXApiContext db, string AthleteId)
         {
-            stravaXApi.signIn();
             DateTime FirstActivityDate = stravaXApi.getActivityRange(AthleteId);
             System.Console.WriteLine($"First activity at {FirstActivityDate.Year}/{FirstActivityDate.Month}");                    
             DateTime Now = DateTime.Now;
