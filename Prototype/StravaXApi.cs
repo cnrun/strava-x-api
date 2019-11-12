@@ -247,13 +247,27 @@ namespace Prototype
 
         public List<ActivityShort> getActivities(String AthleteId, String Year, String Month)
         {
+            try{
+                return _getActivities(AthleteId, Year, Month);
+            }
+            catch (Exception e) when (e is WebDriverException || e is NotFoundException)
+            {
+                Thread.Sleep(5000);
+                return _getActivities(AthleteId, Year, Month);
+            }
+        }
+        private List<ActivityShort> _getActivities(String AthleteId, String Year, String Month)
+        {
             String url = $"https://www.strava.com/athletes/{AthleteId}#interval_type?chart_type=miles&interval_type=month&interval={Year}{Month}&year_offset=0";
 
             BrowserDriver.Navigate().GoToUrl(url);            
             Console.WriteLine($"open {url}");
             DateTime CrawlDate = DateTime.Now;
             // Should wait for element.
-            Thread.Sleep(2000);
+            // Thread.Sleep(2000);
+            IWait<IWebDriver> wait = new OpenQA.Selenium.Support.UI.WebDriverWait(BrowserDriver, TimeSpan.FromSeconds(30.00));
+            wait.Until(driver1 => ((IJavaScriptExecutor)BrowserDriver).ExecuteScript("return document.readyState").Equals("complete"));
+            Thread.Sleep(3000);
 
             if (!Directory.Exists("./screenshots"))
             {
