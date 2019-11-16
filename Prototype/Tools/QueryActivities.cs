@@ -18,6 +18,8 @@ namespace Prototype.Tools
                 stravaXApi.signIn();
                 int Count=0;
                 Boolean KeepRunning=true;
+                int ErrorCountConsecutive=0;
+                int ErrorCount=0;
                 foreach(ActivityRangeQuery arq in db.ActivityQueriesDB)
                 {
                     try
@@ -39,10 +41,18 @@ namespace Prototype.Tools
                         }
                         db.Remove(arq);
                         db.SaveChanges();
+                        ErrorCountConsecutive=0;
                     }
                     catch(Exception e)
                     {
-                        Console.WriteLine($"skip:{arq} {e.Message}");
+                        ErrorCountConsecutive++;
+                        ErrorCount++;
+                        Console.WriteLine($"Error: {ErrorCountConsecutive}/3 total:{ErrorCount} -> skip:{arq} {e.Message}");
+                        if (ErrorCountConsecutive>2)
+                        {
+                            // After 3 consecutive errors, I assume the selenium driver is down. Stop it all.
+                            throw e;
+                        }
                     }
                     Console.WriteLine($"Activities total stored = {db.ActivityShortDB.Count()}");
                     Console.WriteLine($"Request total stored = {db.ActivityQueriesDB.Count()}");
