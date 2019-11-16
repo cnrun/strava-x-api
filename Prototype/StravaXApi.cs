@@ -50,30 +50,44 @@ namespace Prototype
                 return;
             }
 
-            switch(exec_cmd)
-            {
-                case "stats":
-                    Prototype.Tools.DbStats.WriteState(args);
-                break;
-                case "get-activities":
-                    Prototype.Tools.ActivitiesCrawler.ReadActivitiesForAthlete(args);
-                break;
-                case "get-athletes":
-                    Prototype.Tools.AthletesCrawler.ReadAthleteConnectionsForAthlete(args);
-                break;
-                case "get-queries":
-                    Prototype.Tools.QueriesGenerator.WriteQueriesForAthletes(args);
-                break;
-                case "query-activities":
-                    Prototype.Tools.QueryActivities.SendQueriesForActivities(args);
-                break;
-                default:
-                    throw new ArgumentException($"command for {exec_cmd} is not defined.");
-            }
-            var StravaXApi = GetStravaXApi(args);
+            var StravaXApi = new StravaXApi();
             try
             {                
-                StravaXApi.logger.LogDebug("Begin of code");
+                if(exec_cmd=="stats")
+                {
+                    Prototype.Tools.DbStats.WriteState(args);
+                }
+                else
+                {
+                    switch(exec_cmd)
+                    {
+                        case "get-activities":
+                        case "get-athletes":
+                        case "get-queries":
+                        case "query-activities":
+                        break;
+                        default:
+                            throw new ArgumentException($"command for {exec_cmd} is not defined.");
+                    }
+                    StravaXApi.initialize(args);
+                    switch(exec_cmd)
+                    {
+                        case "get-activities":
+                            Prototype.Tools.ActivitiesCrawler.ReadActivitiesForAthlete(StravaXApi, args);
+                        break;
+                        case "get-athletes":
+                            Prototype.Tools.AthletesCrawler.ReadAthleteConnectionsForAthlete(StravaXApi, args);
+                        break;
+                        case "get-queries":
+                            Prototype.Tools.QueriesGenerator.WriteQueriesForAthletes(StravaXApi, args);
+                        break;
+                        case "query-activities":
+                            Prototype.Tools.QueryActivities.SendQueriesForActivities(StravaXApi, args);
+                        break;
+                        default:
+                            throw new ArgumentException($"command for {exec_cmd} is not defined.");
+                    }
+                }
             }
             catch(Exception e)
             {
@@ -82,7 +96,7 @@ namespace Prototype
             }
             finally
             {
-                StravaXApi.logger.LogDebug("End of code");
+                StravaXApi.logger.LogDebug("quit strava-x-api tools");
             }
         }
         private void CreateLogger()
@@ -110,18 +124,23 @@ namespace Prototype
 
         }
 
-        public static StravaXApi GetStravaXApi(string[] args)
+        StravaXApi()
+        {
+            CreateLogger();
+        }
+
+        void initialize(string[] args)
         {
             String Username = Environment.GetEnvironmentVariable("STRAVA_USER");
             SecureString Password = new SecureString();
             foreach(var c in Environment.GetEnvironmentVariable("STRAVA_PWD"))
                 Password.AppendChar(c);
             Password.MakeReadOnly();
-            StravaXApi stravaXApi;
+            StravaXApi stravaXApi = new StravaXApi();
             if (Environment.GetEnvironmentVariable("BROWSERSTACK")=="ON")
-                stravaXApi = new StravaXApi(Environment.GetEnvironmentVariable("BROWSERSTACK_USER"),Environment.GetEnvironmentVariable("BROWSERSTACK_PWD"));
+                stravaXApi.initialize_BrowserStack(Environment.GetEnvironmentVariable("BROWSERSTACK_USER"),Environment.GetEnvironmentVariable("BROWSERSTACK_PWD"));
             else
-                stravaXApi = new StravaXApi();
+                stravaXApi.initialize_SeleniumLocal();
             
             stravaXApi.Username = Username;
             stravaXApi.Password = Password;
@@ -129,20 +148,16 @@ namespace Prototype
             stravaXApi.DownloadThumbnailsActivities = Array.IndexOf(args,"--DownloadThumbnailsActivities") >= 0;
             stravaXApi.DownloadImagesActivities = Array.IndexOf(args,"--DownloadImagesActivities") >= 0;
             stravaXApi.RunBrowserStack = Array.IndexOf(args,"--RunBrowserStack") >= 0;
-            return stravaXApi;
         }
-
-        StravaXApi()
+        void initialize_SeleniumLocal()
         {
-            CreateLogger();
             ChromeOptions Options = new ChromeOptions();
             Options.AddArgument("--window-size=1300,15000");
             Options.AddArgument("--headless");            
             BrowserDriver = new ChromeDriver(Options);
         }
-        StravaXApi(string BrowserStackUserName, string BrowserStackAccessKey)
+        void initialize_BrowserStack(string BrowserStackUserName, string BrowserStackAccessKey)
         {
-            CreateLogger();
             // Warnings do not make sence for RemoteWebDriver with BrowserStack
             #pragma warning disable CS0618
             DesiredCapabilities capability = new DesiredCapabilities();

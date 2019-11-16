@@ -6,7 +6,7 @@ namespace Prototype.Tools
 {    
     public class QueriesGenerator
     {
-        static public void WriteQueriesForAthletes(string[] args)
+        static internal void WriteQueriesForAthletes(StravaXApi stravaXApi, string[] args)
         {
             Console.WriteLine("Create range queries.");
             if (args.Length < 1)
@@ -16,7 +16,6 @@ namespace Prototype.Tools
             }
             using (StravaXApiContext db = new StravaXApiContext())
             {
-                StravaXApi stravaXApi = StravaXApi.GetStravaXApi(args);
                 stravaXApi.signIn();
                 try
                 {

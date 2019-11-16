@@ -9,7 +9,7 @@ namespace Prototype.Tools
 {    
     public class ActivitiesCrawler
     {
-        static public void ReadActivitiesForAthlete(string[] args)
+        static internal void ReadActivitiesForAthlete(StravaXApi stravaXApi, string[] args)
         {
             Console.WriteLine("Read athlete activities with Strava-X-API.");
             if (args.Length < 1)
@@ -19,7 +19,6 @@ namespace Prototype.Tools
             }
 
             String AthleteId = args[0];
-            StravaXApi stravaXApi = StravaXApi.GetStravaXApi(args);
 
             try
             {

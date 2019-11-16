@@ -9,12 +9,11 @@ namespace Prototype.Tools
 {    
     public class QueryActivities
     {
-        static public void SendQueriesForActivities(string[] args)
+        static internal void SendQueriesForActivities(StravaXApi stravaXApi, string[] args)
         {
             Console.WriteLine("Create range queries.");
             using (StravaXApiContext db = new StravaXApiContext())
             {
-                StravaXApi stravaXApi = StravaXApi.GetStravaXApi(args);
                 stravaXApi.signIn();
                 int Count=0;
                 Boolean KeepRunning=true;
