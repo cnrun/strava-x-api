@@ -11,7 +11,6 @@ namespace Prototype.Tools
     {
         static public void WriteState(string[] args)
         {
-            Console.WriteLine("Create range queries.");
             using (StravaXApiContext db = new StravaXApiContext())
             {
                 Console.WriteLine($"Queries stored {db.ActivityQueriesDB.Count()}");
