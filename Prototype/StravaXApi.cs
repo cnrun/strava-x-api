@@ -2,7 +2,6 @@
 using System.Threading;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
@@ -10,6 +9,8 @@ using OpenQA.Selenium.Remote;
 using System.Security;
 using Prototype.Model;
 using System.Collections.Generic;
+using NDesk.Options;
+using Microsoft.Extensions.Logging;
 namespace Prototype
 {
 
@@ -19,22 +20,94 @@ namespace Prototype
     }
     class StravaXApi: IDisposable
     {
+        private ILogger logger;
         private IWebDriver BrowserDriver;
         private Boolean ScreenshotsMonthActivities = false;
         private Boolean DownloadThumbnailsActivities = false;
         private Boolean DownloadImagesActivities = false;
-        private Boolean VerboseDebug = false;
         private Boolean RunBrowserStack = true;
         private string Username;
         private SecureString Password;
         static void Main(string[] args)
         {
-            // Prototype.Tools.ActivitiesCrawler.ReadActivitiesForAthlete(args);
-            // Prototype.Tools.AthletesCrawler.ReadAthleteConnectionsForAthlete(args);
-            // Prototype.Tools.QueriesGenerator.WriteQueriesForAthlete(args);
-            // Prototype.Tools.QueriesGenerator.WriteQueriesForAthletes(args);
-            Prototype.Tools.QueryActivities.SendQueriesForActivities(args);
-            // Prototype.Tools.DbStats.WriteState(args);
+            // start command from dotnet run with "dotnet run -- -c=stats"
+            // NDesk.Opition:
+            // - https://github.com/Latency/NDesk.Options
+            // - http://www.ndesk.org/doc/ndesk-options/NDesk.Options/OptionSet.html#T:NDesk.Options.OptionSet:Docs:Example:1
+            int verbose = 0;
+            var show_help = false;
+            string exec_cmd = "stats";
+            var p = new OptionSet () {
+                { "v|verbose", v => { if (v != null) ++verbose; } },
+                { "h|?|help",  "strava-x-api toolkit", v => { show_help = v != null; } },
+                { "c|command=",   v => { exec_cmd=v; } },
+            };
+            Console.WriteLine($"{String.Join(',',args)}");
+            p.Parse(args);
+            if (show_help)
+            {
+                p.WriteOptionDescriptions(Console.Out);
+                return;
+            }
+
+            switch(exec_cmd)
+            {
+                case "stats":
+                    Prototype.Tools.DbStats.WriteState(args);
+                break;
+                case "get-activities":
+                    Prototype.Tools.ActivitiesCrawler.ReadActivitiesForAthlete(args);
+                break;
+                case "get-athletes":
+                    Prototype.Tools.AthletesCrawler.ReadAthleteConnectionsForAthlete(args);
+                break;
+                case "get-queries":
+                    Prototype.Tools.QueriesGenerator.WriteQueriesForAthletes(args);
+                break;
+                case "query-activities":
+                    Prototype.Tools.QueryActivities.SendQueriesForActivities(args);
+                break;
+                default:
+                    throw new ArgumentException($"command for {exec_cmd} is not defined.");
+            }
+            var StravaXApi = GetStravaXApi(args);
+            try
+            {                
+                StravaXApi.logger.LogDebug("Begin of code");
+            }
+            catch(Exception e)
+            {
+                StravaXApi.logger.LogCritical(e.Message);
+                StravaXApi.logger.LogCritical(e.StackTrace);
+            }
+            finally
+            {
+                StravaXApi.logger.LogDebug("End of code");
+            }
+        }
+        private void CreateLogger()
+        {
+            #region snippet_LoggerFactory
+            // Logging in .NET Core and ASP.NET Core
+            // https://docs.microsoft.com/de-de/aspnet/core/fundamentals/logging/?view=aspnetcore-3.0
+            // https://github.com/serilog/serilog/wiki/Getting-Started
+            //
+            // AspNetCore.Docs
+            // https://github.com/aspnet/AspNetCore.Docs/tree/master/aspnetcore/fundamentals/logging/index/samples/3.x/LoggingConsoleApp
+            var loggerFactory = LoggerFactory.Create(builder =>
+            {
+                builder
+                    .AddFilter("Microsoft", Microsoft.Extensions.Logging.LogLevel.Warning)
+                    .AddFilter("System", Microsoft.Extensions.Logging.LogLevel.Warning)
+                    .AddFilter("Prototype.StravaXApi", Microsoft.Extensions.Logging.LogLevel.Debug)
+                    .AddFilter("StravaXApi", Microsoft.Extensions.Logging.LogLevel.Debug)
+                    .AddConsole();
+                    //.AddEventLog();
+            });
+            logger = loggerFactory.CreateLogger<StravaXApi>();
+            logger.LogDebug("Log strava-x-api");
+            #endregion
+
         }
 
         public static StravaXApi GetStravaXApi(string[] args)
@@ -55,13 +128,13 @@ namespace Prototype
             stravaXApi.ScreenshotsMonthActivities = Array.IndexOf(args,"--ScreenshotsMonthActivities") >= 0;
             stravaXApi.DownloadThumbnailsActivities = Array.IndexOf(args,"--DownloadThumbnailsActivities") >= 0;
             stravaXApi.DownloadImagesActivities = Array.IndexOf(args,"--DownloadImagesActivities") >= 0;
-            stravaXApi.VerboseDebug = Array.IndexOf(args,"--VerboseDebug") >= 0;
             stravaXApi.RunBrowserStack = Array.IndexOf(args,"--RunBrowserStack") >= 0;
             return stravaXApi;
         }
 
         StravaXApi()
         {
+            CreateLogger();
             ChromeOptions Options = new ChromeOptions();
             Options.AddArgument("--window-size=1300,15000");
             Options.AddArgument("--headless");            
@@ -69,6 +142,7 @@ namespace Prototype
         }
         StravaXApi(string BrowserStackUserName, string BrowserStackAccessKey)
         {
+            CreateLogger();
             // Warnings do not make sence for RemoteWebDriver with BrowserStack
             #pragma warning disable CS0618
             DesiredCapabilities capability = new DesiredCapabilities();
@@ -121,7 +195,8 @@ namespace Prototype
             String url = $"https://www.strava.com/athletes/{AthleteId}";
 
             BrowserDriver.Navigate().GoToUrl(url);            
-            Console.WriteLine($"open {url}");
+            logger.LogInformation($"open {url}");
+            logger.LogDebug($"open {url}");
 
             // locate dates in the pulldown menu
             var Elts=BrowserDriver.FindElements(By.XPath("//div[@id='interval-graph']/div/div/ul/li/a"));
@@ -147,7 +222,7 @@ namespace Prototype
             int YearBeginInt=int.Parse(MinDateString.Substring(0,4))-1;
             int WeekBeginInt=int.Parse(MinDateString.Substring(4,2));
             DateTime FirstActivityDate = FirstDateOfWeekISO8601(YearBeginInt,WeekBeginInt);
-            if (VerboseDebug) System.Console.WriteLine($"Begin = {YearBeginInt}/{WeekBeginInt} {FirstActivityDate}");
+            logger.LogDebug($"Begin = {YearBeginInt}/{WeekBeginInt} {FirstActivityDate}");
 
             return FirstActivityDate;
         }
@@ -190,24 +265,24 @@ namespace Prototype
             int PageCount=0;
             do
             {
-                Console.WriteLine($"open {NextPageUrl}");
+                logger.LogInformation($"open {NextPageUrl}");
                 BrowserDriver.Navigate().GoToUrl(NextPageUrl);            
                 var ConnectedAthleteElts=BrowserDriver.FindElements(By.XPath("//li[@data-athlete-id]"));
                 foreach (IWebElement ConnectedAthleteElt in ConnectedAthleteElts)
                 {
                     try{
                         var ConnectedAthleteId = ConnectedAthleteElt.GetAttribute("data-athlete-id");  
-                        if (VerboseDebug) Console.WriteLine($"ConnectedAthleteId {ConnectedAthleteId}");              
+                        logger.LogDebug($"ConnectedAthleteId {ConnectedAthleteId}");              
                         var ConnectedAthleteName = ConnectedAthleteElt.FindElement(By.XPath("./div[@title]")).GetAttribute("title");
-                        if (VerboseDebug) Console.WriteLine($"ConnectedAthleteName {ConnectedAthleteName}");              
+                        logger.LogDebug($"ConnectedAthleteName {ConnectedAthleteName}");              
                         var ConnectedAthleteAvatarUrl = ConnectedAthleteElt.FindElement(By.XPath(".//img[@class='avatar-img']")).GetAttribute("src");
-                        if (VerboseDebug) Console.WriteLine($"ConnectedAthleteAvatarUrl {ConnectedAthleteAvatarUrl}");              
+                        logger.LogDebug($"ConnectedAthleteAvatarUrl {ConnectedAthleteAvatarUrl}");              
                         var ConnectedAthleteBadge = ConnectedAthleteElt.FindElement(By.XPath(".//div[@class='avatar-badge']/span/span")).GetAttribute("class");
-                        if (VerboseDebug) Console.WriteLine($"ConnectedAthleteBadge {ConnectedAthleteBadge}");              
+                        logger.LogDebug($"ConnectedAthleteBadge {ConnectedAthleteBadge}");              
                         var ConnectedAthleteLocation = ConnectedAthleteElt.FindElement(By.XPath(".//div[@class='location mt-0']")).Text;
-                        if (VerboseDebug) Console.WriteLine($"ConnectedAthleteLocation {ConnectedAthleteLocation}");              
+                        logger.LogDebug($"ConnectedAthleteLocation {ConnectedAthleteLocation}");              
                         var AthleteConnectionType = ConnectedAthleteElt.FindElement(By.XPath(".//button")).Text;
-                        if (VerboseDebug) Console.WriteLine($"AthleteConnectionType {AthleteConnectionType}");              
+                        logger.LogDebug($"AthleteConnectionType {AthleteConnectionType}");              
 
                         var AthleteShort = new ConnectedAthlete();
                         AthleteShort.AthleteId = ConnectedAthleteId;
@@ -217,7 +292,7 @@ namespace Prototype
                         AthleteShort.AthleteLocation = ConnectedAthleteLocation;
                         AthleteShort.AthleteLastCrawled = CrawlDate;
                         AthleteShortList.Add(AthleteShort);
-                        Console.WriteLine($"add {AthleteShort}");              
+                        logger.LogInformation($"add {AthleteShort}");              
                         // We also have informations about the connection state
                         AthleteShort.ConnectionState = AthleteConnectionType;
                     }
@@ -228,13 +303,13 @@ namespace Prototype
                             // Page seams to be incorrect loaded. Probably need to wait more.
                             throw e;
                         }
-                        Console.WriteLine($"Skip athlete at {NextPageUrl} Err:{e.Message}");
+                        logger.LogInformation($"Skip athlete at {NextPageUrl} Err:{e.Message}");
                     }
                 }
                 try
                 {
                     NextPageUrl = BrowserDriver.FindElement(By.XPath("//li[@class='next_page']/a")).GetAttribute("href");
-                    if (VerboseDebug) Console.WriteLine($"next page={NextPageUrl}");
+                    logger.LogDebug($"next page={NextPageUrl}");
                 }
                 catch(WebDriverException)
                 {
@@ -262,7 +337,7 @@ namespace Prototype
             String url = $"https://www.strava.com/athletes/{AthleteId}#interval_type?chart_type=miles&interval_type=month&interval={Year}{Month}&year_offset=0";
 
             BrowserDriver.Navigate().GoToUrl(url);            
-            Console.WriteLine($"open {url}");
+            logger.LogInformation($"open {url}");
             DateTime CrawlDate = DateTime.Now;
             // Should wait for element.
             // Thread.Sleep(2000);
@@ -273,7 +348,7 @@ namespace Prototype
             if (!Directory.Exists("./screenshots"))
             {
                 DirectoryInfo DirInfo = Directory.CreateDirectory("./screenshots");
-                Console.WriteLine($"directory for screenshots created at {DirInfo.FullName}");
+                logger.LogInformation($"directory for screenshots created at {DirInfo.FullName}");
             }
             if (ScreenshotsMonthActivities)
             {
@@ -282,7 +357,7 @@ namespace Prototype
 
             // Find all activity icons in thos page
             var Elts=BrowserDriver.FindElements(By.XPath("//div[@class='entry-type-icon']"));
-            if (VerboseDebug) Console.WriteLine($"Elts count={Elts.Count} for {Year}/{Month}");
+            logger.LogDebug($"Elts count={Elts.Count} for {Year}/{Month}");
 
             List<ActivityShort> ActivitiesList = new List<ActivityShort>();
 
@@ -311,7 +386,7 @@ namespace Prototype
                         // https://dgtzuqphqg23d.cloudfront.net/Wz2CrhzkXF3hm99lZmgWRBRbWhHBPLxUGDja_aMJDeQ-128x72.jpg
                         string imageUrl = ActivityImageElt.GetAttribute("src");
                         ActivityThumbnailsList.Add(imageUrl);                        
-                        if (VerboseDebug) System.Console.WriteLine($"Activity {ActivityId} url {imageUrl}");
+                        logger.LogDebug($"Activity {ActivityId} url {imageUrl}");
                         if(DownloadThumbnailsActivities)
                         {
                             System.Net.WebClient webClient = new System.Net.WebClient();
@@ -329,7 +404,7 @@ namespace Prototype
                         // https://dgtzuqphqg23d.cloudfront.net/Wz2CrhzkXF3hm99lZmgWRBRbWhHBPLxUGDja_aMJDeQ-2048x1152.jpg
                         string imageUrl = ActivityImageElt.GetAttribute("str-target-url");
                         ActivityImagesList.Add(imageUrl);                        
-                        if (VerboseDebug) System.Console.WriteLine($"Activity {ActivityId} url {imageUrl}");
+                        logger.LogDebug($"Activity {ActivityId} url {imageUrl}");
                         if(DownloadImagesActivities)
                         {
                             System.Net.WebClient webClient = new System.Net.WebClient();
@@ -354,7 +429,7 @@ namespace Prototype
                             var AthleteIdInGroupElt = ActivityNumberElt.FindElement(By.XPath(".//a[contains(@href,'/athletes/')]"));
                             AthleteIdInGroup = AthleteIdInGroupElt.GetAttribute("href");
                             AthleteIdInGroup = AthleteIdInGroup.Substring(AthleteIdInGroup.LastIndexOf("/")+1);
-                            if (VerboseDebug) System.Console.WriteLine($"Groupped activity : Activity {ActivityId} Athlete {AthleteIdInGroup}");
+                            logger.LogDebug($"Groupped activity : Activity {ActivityId} Athlete {AthleteIdInGroup}");
 
                             // for group activities we are creating groups                            
                             var GroupActivityElts = ActivityNumberElt.FindElements(By.XPath("./../../..//li[@class='entity-details feed-entry']"));
@@ -370,7 +445,7 @@ namespace Prototype
                                     string GroupAthleteUrl = GroupActivityElt.FindElement(By.XPath(".//a[@class='avatar-content']")).GetAttribute("href");
                                     string GroupAthleteId = GroupAthleteUrl.Substring(GroupAthleteUrl.LastIndexOf('/')+1);
                                     GroupAthleteList.Add(GroupAthleteId);
-                                    if (VerboseDebug) Console.WriteLine($"Group {ActivityId} with {GroupActivityString} from {GroupAthleteId}");
+                                    logger.LogDebug($"Group {ActivityId} with {GroupActivityString} from {GroupAthleteId}");
                                 }
                             }
                         }
@@ -415,7 +490,7 @@ namespace Prototype
                     ActivityType ActivityType = parseActivityType(ActivityTypeElt.GetAttribute("class"));
 
                     DateTime ActivityTime = DateTime.Parse(ActivityTimeString.Substring(0,ActivityTimeString.Length-4));
-                    Console.WriteLine($"Id={ActivityId} Text={ActivityTitle} Type={ActivityType} Time={ActivityTime}");                    
+                    logger.LogInformation($"Id={ActivityId} Text={ActivityTitle} Type={ActivityType} Time={ActivityTime}");                    
                     var ActivityShort = new ActivityShort();
                     ActivityShort.AthleteId = AthleteId;
                     ActivityShort.ActivityId = ActivityId;
@@ -439,7 +514,7 @@ namespace Prototype
                         // Page seams to be incorrect loaded. Probably need to wait more.
                         throw e;
                     }
-                    Console.WriteLine($"Skip Activity at {url} Err:{e.Message}");
+                    logger.LogInformation($"Skip Activity at {url} Err:{e.Message}");
                 }
             }
             return ActivitiesList;
@@ -455,7 +530,7 @@ namespace Prototype
             {
                 // Fallback when ActivityType is not in Enum
                 ret = ActivityType.Other;
-                Console.WriteLine("{0} is not an underlying value of the ActivityType enumeration.", ActivityTypeString);
+                logger.LogInformation("{0} is not an underlying value of the ActivityType enumeration.", ActivityTypeString);
             }
             return ret;
         }
