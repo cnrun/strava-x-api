@@ -5,6 +5,7 @@ using OpenQA.Selenium;
 using Prototype.Model;
 using Prototype;
 using System.Collections.Generic;
+using NDesk.Options;
 
 namespace Prototype.Tools
 {    
@@ -13,13 +14,15 @@ namespace Prototype.Tools
         static internal void ReadAthleteConnectionsForAthlete(StravaXApi stravaXApi, string[] args)
         {
             Console.WriteLine("Read athlete connections with Strava-X-API.");
-            if (args.Length < 1)
+            String AthleteId = null;
+            var p = new OptionSet () {
+                { "a|athleteid=",   v => { AthleteId=v; } },
+            };
+            if (AthleteId==null)
             {
-                Console.WriteLine("Please find the needed arguments from the code 😛. Oh there are several options with environment variables! ");
-                return;
+                p.WriteOptionDescriptions(Console.Out);
+                throw new ArgumentException("missing athlete id");    
             }
-
-            String AthleteId = args[0];
 
             try
             {

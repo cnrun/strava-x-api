@@ -3,6 +3,7 @@ using System.Threading;
 using System.Linq;
 using OpenQA.Selenium;
 using Prototype.Model;
+using NDesk.Options;
 using System.Collections.Generic;
 
 namespace Prototype.Tools
@@ -12,13 +13,16 @@ namespace Prototype.Tools
         static internal void ReadActivitiesForAthlete(StravaXApi stravaXApi, string[] args)
         {
             Console.WriteLine("Read athlete activities with Strava-X-API.");
-            if (args.Length < 1)
-            {
-                Console.WriteLine("Please find the needed arguments from the code 😛. Oh there are several options with environment variables! ");
-                return;
-            }
 
-            String AthleteId = args[0];
+            String AthleteId = null;
+            var p = new OptionSet () {
+                { "a|athleteid=",   v => { AthleteId=v; } },
+            };
+            if (AthleteId==null)
+            {
+                p.WriteOptionDescriptions(Console.Out);
+                throw new ArgumentException("missing athlete id");    
+            }
 
             try
             {

@@ -9,11 +9,6 @@ namespace Prototype.Tools
         static internal void WriteQueriesForAthletes(StravaXApi stravaXApi, string[] args)
         {
             Console.WriteLine("Create range queries.");
-            if (args.Length < 1)
-            {
-                Console.WriteLine("Please find the needed arguments from the code 😛. Oh there are several options with environment variables! ");
-                return;
-            }
             using (StravaXApiContext db = new StravaXApiContext())
             {
                 stravaXApi.signIn();
