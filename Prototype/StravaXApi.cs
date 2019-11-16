@@ -131,23 +131,22 @@ namespace Prototype
 
         void initialize(string[] args)
         {
-            String Username = Environment.GetEnvironmentVariable("STRAVA_USER");
-            SecureString Password = new SecureString();
+            String _Username = Environment.GetEnvironmentVariable("STRAVA_USER");
+            SecureString _Password = new SecureString();
             foreach(var c in Environment.GetEnvironmentVariable("STRAVA_PWD"))
-                Password.AppendChar(c);
-            Password.MakeReadOnly();
-            StravaXApi stravaXApi = new StravaXApi();
+                _Password.AppendChar(c);
+            _Password.MakeReadOnly();
             if (Environment.GetEnvironmentVariable("BROWSERSTACK")=="ON")
-                stravaXApi.initialize_BrowserStack(Environment.GetEnvironmentVariable("BROWSERSTACK_USER"),Environment.GetEnvironmentVariable("BROWSERSTACK_PWD"));
+                initialize_BrowserStack(Environment.GetEnvironmentVariable("BROWSERSTACK_USER"),Environment.GetEnvironmentVariable("BROWSERSTACK_PWD"));
             else
-                stravaXApi.initialize_SeleniumLocal();
+                initialize_SeleniumLocal();
             
-            stravaXApi.Username = Username;
-            stravaXApi.Password = Password;
-            stravaXApi.ScreenshotsMonthActivities = Array.IndexOf(args,"--ScreenshotsMonthActivities") >= 0;
-            stravaXApi.DownloadThumbnailsActivities = Array.IndexOf(args,"--DownloadThumbnailsActivities") >= 0;
-            stravaXApi.DownloadImagesActivities = Array.IndexOf(args,"--DownloadImagesActivities") >= 0;
-            stravaXApi.RunBrowserStack = Array.IndexOf(args,"--RunBrowserStack") >= 0;
+            Username = _Username;
+            Password = _Password;
+            ScreenshotsMonthActivities = Array.IndexOf(args,"--ScreenshotsMonthActivities") >= 0;
+            DownloadThumbnailsActivities = Array.IndexOf(args,"--DownloadThumbnailsActivities") >= 0;
+            DownloadImagesActivities = Array.IndexOf(args,"--DownloadImagesActivities") >= 0;
+            RunBrowserStack = Array.IndexOf(args,"--RunBrowserStack") >= 0;
         }
         void initialize_SeleniumLocal()
         {
