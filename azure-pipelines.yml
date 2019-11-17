@@ -21,17 +21,12 @@ steps:
     command: 'custom'
     custom: 'tool'
     arguments: 'install --tool-path . dotnet-ef'
-- task: DotNetCoreCLI@2
-  inputs:
-    command: 'custom'
-    custom: 'ef'
-    arguments: 'migrations add InitialCreate'
 
-- task: DotNetCoreCLI@2
-  inputs:
-    command: 'custom'
-    custom: 'ef'
-    arguments: 'database update'
+- script: |
+    dotnet-ef --project Prototype/Prototype.csproj migrations add InitialCreate
+    dotnet-ef --project Prototype/Prototype.csproj database update
+  displayName: 'call entity framework create and update'
+
 - task: DotNetCoreCLI@2
   env:
     BROWSERSTACK: $(BROWSERSTACK)
