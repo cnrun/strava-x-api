@@ -20,7 +20,7 @@ steps:
   inputs:
     command: 'custom'
     custom: 'tool'
-    arguments: 'install --global dotnet-ef'
+    arguments: 'install --tool-path . dotnet-ef'
 - task: DotNetCoreCLI@2
   inputs:
     command: 'custom'
