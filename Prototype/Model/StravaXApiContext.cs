@@ -56,9 +56,20 @@ namespace Prototype.Model
         public DbSet<ActivityRangeQuery> ActivityQueriesDB { get; set; }
         
         protected override void OnConfiguring(DbContextOptionsBuilder options)
-            => options.UseSqlite("Data Source=StravaXApi.db").EnableSensitiveDataLogging();
-            // => options.UseSqlServer(Environment.GetEnvironmentVariable("CONNECTION_STRING"));
-            // => options.UseSqlServer(System.Configuration.Configuration["Data:db:ConnectionString"]);            
+        {
+            string ConnectionString=Environment.GetEnvironmentVariable("CONNECTION_STRING");
+            if (ConnectionString.StartsWith("Data Source"))
+            {
+                // i.e. "Data Source=StravaXApi.db"
+                options.UseSqlite("Data Source=StravaXApi.db").EnableSensitiveDataLogging();
+            }
+            else
+            {
+                // i.e. ""Server=tcp:strava-x-api.database.windows.net,1433;Initial Catalog=StravaActivityDB;Persist Security Info=False;User ID=-----;Password=------;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;""
+                options.UseSqlServer(ConnectionString);
+            }
+        }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
             => modelBuilder.Entity<ActivityRangeQuery>().HasKey(c => new { c.AthleteId, c.DateFrom, c.DateTo });
     }
