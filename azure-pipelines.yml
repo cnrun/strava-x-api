@@ -19,14 +19,12 @@ steps:
 - task: DotNetCoreCLI@2
   inputs:
     command: 'custom'
-    projects: 'Prototype'
     custom: 'ef'
     arguments: 'migrations add InitialCreate'
 
 - task: DotNetCoreCLI@2
   inputs:
     command: 'custom'
-    projects: 'Prototype'
     custom: 'ef'
     arguments: 'database update'
 - task: DotNetCoreCLI@2
