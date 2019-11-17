@@ -58,10 +58,14 @@ namespace Prototype.Model
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
             string ConnectionString=Environment.GetEnvironmentVariable("CONNECTION_STRING");
-            if (ConnectionString.StartsWith("Data Source"))
+            if (string.IsNullOrEmpty(ConnectionString))
+            {
+                options.UseSqlite("Data Source=StravaXApi.db").EnableSensitiveDataLogging();
+            }
+            else if (ConnectionString.StartsWith("Data Source"))
             {
                 // i.e. "Data Source=StravaXApi.db"
-                options.UseSqlite("Data Source=StravaXApi.db").EnableSensitiveDataLogging();
+                options.UseSqlite(ConnectionString);
             }
             else
             {
