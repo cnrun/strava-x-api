@@ -42,9 +42,7 @@ steps:
     command: 'run'
     # path is relative to project path, before the workingDirectory ist evaluated
     projects: '**/*.csproj'
-    arguments: |
-      -c=get-activities
-      -athleteid=144100
+    arguments: '-c=get-activities -athleteid=144100'
     workingDirectory: 'Prototype/'
 # retrieve db stats
 - task: DotNetCoreCLI@2
