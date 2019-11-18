@@ -24,8 +24,8 @@ steps:
     ./dotnet-ef --project ./Prototype.csproj migrations add InitialCreate
     ./dotnet-ef --project ./Prototype.csproj database update
     ls -alrt
-  displayName: 'call entity framework create and update'
-  
+  displayName: 'EF: create local db'
+# call API
 - task: DotNetCoreCLI@2
   env:
     BROWSERSTACK: $(BROWSERSTACK)
@@ -38,6 +38,16 @@ steps:
     TO_YEAR: 2019
     STRAVA_USER: $(STRAVA_USER)
     STRAVA_PWD: $(STRAVA_PWD)
+  inputs:
+    command: 'run'
+    # path is relative to project path, before the workingDirectory ist evaluated
+    projects: '**/*.csproj'
+    arguments: |
+      -c=get-activities
+      -athleteid=144100
+    workingDirectory: 'Prototype/'
+# retrieve db stats
+- task: DotNetCoreCLI@2
   inputs:
     command: 'run'
     # path is relative to project path, before the workingDirectory ist evaluated
