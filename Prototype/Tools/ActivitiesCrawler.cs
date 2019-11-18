@@ -19,6 +19,7 @@ namespace Prototype.Tools
             var p = new OptionSet () {
                 { "a|athleteid=",   v => { AthleteId=v; } },
             };
+            p.Parse(args);
             if (AthleteId==null)
             {
                 p.WriteOptionDescriptions(Console.Out);
