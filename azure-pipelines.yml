@@ -29,6 +29,7 @@ steps:
 # https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/build/dotnet-core-cli?view=azure-devops
 - task: DotNetCoreCLI@2
   env:
+    # values overwritten from pipeline variables
     BROWSERSTACK: $(BROWSERSTACK)
     BROWSERSTACK_PWD: $(BROWSERSTACK_PWD)
     BROWSERSTACK_USER: $(BROWSERSTACK_USER)
