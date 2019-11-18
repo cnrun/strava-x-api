@@ -45,5 +45,6 @@ steps:
     STRAVA_PWD: $(STRAVA_PWD)
   inputs:
     command: 'run'
-    projects: '**/*.csproj'
+    projects: 'Prototype.csproj'
     arguments: '-c=stats'
+    workingDirectory: 'Prototype'
