@@ -23,8 +23,13 @@ steps:
     dotnet tool install  --tool-path . dotnet-ef
     ./dotnet-ef --project ./Prototype.csproj migrations add InitialCreate
     ./dotnet-ef --project ./Prototype.csproj database update
-    ls
+    ls -alrt
   displayName: 'call entity framework create and update'
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'build'
+    projects: '**/*.csproj'
 
 - task: DotNetCoreCLI@2
   env:
@@ -33,7 +38,7 @@ steps:
     BROWSERSTACK_USER: $(BROWSERSTACK_USER)
     CONNECTION_STRING: $(CONNECTION_STRING)
     FROM_MONTH: 01
-    FROM_YEAR: 2000
+    FROM_YEAR: 2019
     TO_MONTH: 12
     TO_YEAR: 2019
     STRAVA_USER: $(STRAVA_USER)
@@ -41,4 +46,4 @@ steps:
   inputs:
     command: 'run'
     projects: '**/*.csproj'
-    arguments: '144100'
+    arguments: '-c=stats'
