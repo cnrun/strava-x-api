@@ -11,8 +11,9 @@ namespace Prototype.Tools
 {    
     public class AthletesCrawler
     {
-        static internal void ReadAthleteConnectionsForAthlete(StravaXApi stravaXApi, string[] args)
+        static internal int ReadAthleteConnectionsForAthlete(StravaXApi stravaXApi, string[] args)
         {
+            int ret = -1;
             Console.WriteLine("Read athlete connections with Strava-X-API.");
             String AthleteId = null;
             var p = new OptionSet () {
@@ -155,15 +156,18 @@ namespace Prototype.Tools
                     Console.WriteLine($"total stored = {db.AthleteShortDB.OrderBy(b => b.AthleteId).Count()}");
                     AthleteShortList.Clear();
                 }
+                ret = 0;
             }
             catch(Exception e)
             {
-                Console.WriteLine($"ERROR:{e.ToString()}");  
+                Console.WriteLine($"ERROR:{e.ToString()}"); 
+                ret = 1; 
             }
             finally
             {
                 stravaXApi.Dispose();
             }
+            return ret;
         }
     }
 }

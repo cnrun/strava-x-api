@@ -9,8 +9,9 @@ namespace Prototype.Tools
 {    
     public class QueryActivities
     {
-        static internal void SendQueriesForActivities(StravaXApi stravaXApi, string[] args)
+        static internal int SendQueriesForActivities(StravaXApi stravaXApi, string[] args)
         {
+            int ret = -1;
             Console.WriteLine("Query activities.");
             using (StravaXApiContext db = new StravaXApiContext())
             {
@@ -63,6 +64,7 @@ namespace Prototype.Tools
                     }
                 }
             }
+            return ret;
         }
     }
 }

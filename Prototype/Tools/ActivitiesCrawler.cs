@@ -10,8 +10,9 @@ namespace Prototype.Tools
 {    
     public class ActivitiesCrawler
     {
-        static internal void ReadActivitiesForAthlete(StravaXApi stravaXApi, string[] args)
+        static internal int ReadActivitiesForAthlete(StravaXApi stravaXApi, string[] args)
         {
+            int ret=-1;
             Console.WriteLine("Read athlete activities with Strava-X-API.");
 
             String AthleteId = null;
@@ -77,15 +78,18 @@ namespace Prototype.Tools
                         }
                     }
                 }
+                ret = 0;
             }
             catch(Exception e)
             {
                 Console.WriteLine($"ERROR:{e.ToString()}");  
+                ret = 1;
             }
             finally
             {
                 stravaXApi.Dispose();
             }
+            return ret;
         }
     }
 }

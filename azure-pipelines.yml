@@ -20,8 +20,10 @@ steps:
 # https://github.com/ignatandrei/stankins/blob/master/azure-pipelines.yml
 - script: |
     dotnet tool install  --tool-path . dotnet-ef
-    ./dotnet-ef --project Prototype/Prototype.csproj migrations add InitialCreate
-    ./dotnet-ef --project Prototype/Prototype.csproj database update
+    cd Prototype
+    ./dotnet-ef --project ./Prototype.csproj migrations add InitialCreate
+    ./dotnet-ef --project ./Prototype.csproj database update
+    ls
   displayName: 'call entity framework create and update'
 
 - task: DotNetCoreCLI@2

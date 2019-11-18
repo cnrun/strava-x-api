@@ -6,8 +6,9 @@ namespace Prototype.Tools
 {    
     public class QueriesGenerator
     {
-        static internal void WriteQueriesForAthletes(StravaXApi stravaXApi, string[] args)
+        static internal int WriteQueriesForAthletes(StravaXApi stravaXApi, string[] args)
         {
+            int ret = -1 ;
             Console.WriteLine("Create range queries.");
             using (StravaXApiContext db = new StravaXApiContext())
             {
@@ -27,17 +28,19 @@ namespace Prototype.Tools
                             Console.WriteLine($"SKIP:{Athlete.AthleteId} {e.ToString()}");  
                         }
                     }
+                    ret = 0 ;
                 }
                 catch(Exception e)
                 {
                     Console.WriteLine($"ERROR:{e.ToString()}");  
+                    ret = -1;
                 }
                 finally
                 {
                     stravaXApi.Dispose();
                 }
             }
-
+            return ret;
         }
 
         static void WriteQueriesForAthlete(StravaXApi stravaXApi, StravaXApiContext db, string AthleteId)

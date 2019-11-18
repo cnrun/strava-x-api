@@ -28,8 +28,9 @@ namespace Prototype
         private Boolean RunBrowserStack = true;
         private string Username;
         private SecureString Password;
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
+            int ret = -1;
             // start command from dotnet run with "dotnet run -- -c=stats"
             // NDesk.Opition:
             // - https://github.com/Latency/NDesk.Options
@@ -47,7 +48,7 @@ namespace Prototype
             if (show_help)
             {
                 p.WriteOptionDescriptions(Console.Out);
-                return;
+                return 0;
             }
 
             var StravaXApi = new StravaXApi();
@@ -55,7 +56,7 @@ namespace Prototype
             {                
                 if(exec_cmd=="stats")
                 {
-                    Prototype.Tools.DbStats.WriteState(args);
+                    ret = Prototype.Tools.DbStats.WriteState(args);
                 }
                 else
                 {
@@ -73,16 +74,16 @@ namespace Prototype
                     switch(exec_cmd)
                     {
                         case "get-activities":
-                            Prototype.Tools.ActivitiesCrawler.ReadActivitiesForAthlete(StravaXApi, args);
+                            ret = Prototype.Tools.ActivitiesCrawler.ReadActivitiesForAthlete(StravaXApi, args);
                         break;
                         case "get-athletes":
-                            Prototype.Tools.AthletesCrawler.ReadAthleteConnectionsForAthlete(StravaXApi, args);
+                            ret = Prototype.Tools.AthletesCrawler.ReadAthleteConnectionsForAthlete(StravaXApi, args);
                         break;
                         case "get-queries":
-                            Prototype.Tools.QueriesGenerator.WriteQueriesForAthletes(StravaXApi, args);
+                            ret = Prototype.Tools.QueriesGenerator.WriteQueriesForAthletes(StravaXApi, args);
                         break;
                         case "query-activities":
-                            Prototype.Tools.QueryActivities.SendQueriesForActivities(StravaXApi, args);
+                            ret = Prototype.Tools.QueryActivities.SendQueriesForActivities(StravaXApi, args);
                         break;
                         default:
                             throw new ArgumentException($"command for {exec_cmd} is not defined.");
@@ -91,6 +92,7 @@ namespace Prototype
             }
             catch(Exception e)
             {
+                ret = 2;
                 StravaXApi.logger.LogCritical(e.Message);
                 StravaXApi.logger.LogCritical(e.StackTrace);
             }
@@ -98,6 +100,7 @@ namespace Prototype
             {
                 StravaXApi.logger.LogDebug("quit strava-x-api tools");
             }
+            return ret; 
         }
         private void CreateLogger()
         {
