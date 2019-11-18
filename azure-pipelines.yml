@@ -25,12 +25,7 @@ steps:
     ./dotnet-ef --project ./Prototype.csproj database update
     ls -alrt
   displayName: 'call entity framework create and update'
-
-- task: DotNetCoreCLI@2
-  inputs:
-    command: 'build'
-    projects: '**/*.csproj'
-
+  
 - task: DotNetCoreCLI@2
   env:
     BROWSERSTACK: $(BROWSERSTACK)
@@ -45,6 +40,7 @@ steps:
     STRAVA_PWD: $(STRAVA_PWD)
   inputs:
     command: 'run'
+    # path is relative to project path, before the workingDirectory ist evaluated
     projects: '**/*.csproj'
     arguments: '-c=stats'
-    workingDirectory: '$(System.DefaultWorkingDirectory)/Prototype/'
+    workingDirectory: 'Prototype/'
