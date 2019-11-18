@@ -47,4 +47,4 @@ steps:
     command: 'run'
     projects: 'Prototype.csproj'
     arguments: '-c=stats'
-    workingDirectory: './Prototype'
+    workingDirectory: 'Prototype/'
