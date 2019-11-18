@@ -19,8 +19,8 @@ steps:
 # https://github.com/dotnet/cli/issues/8368#issuecomment-424852996
 # https://github.com/ignatandrei/stankins/blob/master/azure-pipelines.yml
 - script: |
-    dotnet tool install  --tool-path . dotnet-ef
     cd Prototype
+    dotnet tool install  --tool-path . dotnet-ef
     ./dotnet-ef --project ./Prototype.csproj migrations add InitialCreate
     ./dotnet-ef --project ./Prototype.csproj database update
     ls
