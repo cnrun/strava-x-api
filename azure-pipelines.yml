@@ -11,6 +11,12 @@ pool:
 
 
 steps:
+- task: Docker@2
+  inputs:
+    containerRegistry: 'GitHub Registry'
+    repository: 'strava-x-api'
+    command: 'buildAndPush'
+    Dockerfile: '**/Prototype.Dockerfile'
 - task: DotNetCoreCLI@2
   inputs:
     command: 'build'
