@@ -12,7 +12,7 @@ pool:
 steps:
 - task: Docker@2
   inputs:
-    containerRegistry: 'GitHub Registry'
+    containerRegistry: 'DockerHub'
     repository: 'strava-x-api'
     command: 'buildAndPush'
     Dockerfile: '**/Prototype.Dockerfile'
