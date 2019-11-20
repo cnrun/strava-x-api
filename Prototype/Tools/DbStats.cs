@@ -22,7 +22,14 @@ namespace Prototype.Tools
                     {
                         AthleteShort ath = db.AthleteShortDB.Find(aId);
                         // for format: https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/tokens/interpolated
-                        Console.WriteLine($" Activities:{db.ActivityShortDB.Count(a => a.AthleteId==aId),6} for {ath.AthleteId,9} {ath.AthleteName,-40} {ath.AthleteLocation}");
+                        if (ath != null)
+                        {                            
+                            Console.WriteLine($" Activities:{db.ActivityShortDB.Count(a => a.AthleteId==aId),6} for {ath.AthleteId,9} {ath.AthleteName,-40} {ath.AthleteLocation}");
+                        }
+                        else
+                        {
+                            Console.WriteLine($" Activities:{db.ActivityShortDB.Count(a => a.AthleteId==aId),6} for {aId,9}");
+                        }
                     }
                 }
                 ret = 0 ;
