@@ -9,7 +9,6 @@ trigger:
 pool:
   vmImage: 'ubuntu-latest'
 
-
 steps:
 - task: Docker@2
   inputs:
@@ -24,11 +23,10 @@ steps:
 
 # https://github.com/dotnet/cli/issues/8368#issuecomment-424852996
 # https://github.com/ignatandrei/stankins/blob/master/azure-pipelines.yml
-- script: |
+- script: 
     cd Prototype
     dotnet tool install --tool-path . dotnet-ef  --version 3.0.0
     ./dotnet-ef --project ./Prototype.csproj migrations add InitialCreate
-    ./dotnet-ef --project ./Prototype.csproj database update
     ls -alrt
   displayName: 'EF: create local db'
 # retrieve db stats
@@ -37,7 +35,7 @@ steps:
     command: 'run'
     # path is relative to project path, before the workingDirectory ist evaluated
     projects: '**/*.csproj'
-    arguments: '-c=stats'
+    arguments: '-c=init'
     workingDirectory: 'Prototype/'
 # call API
 # https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/build/dotnet-core-cli?view=azure-devops
