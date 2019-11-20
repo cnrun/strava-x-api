@@ -332,3 +332,4 @@ ASALocalRun/
 Prototype/screenshots/*
 Prototype/Migrations/*_InitialCreate*.cs
 Prototype/*.db
+Prototype/data

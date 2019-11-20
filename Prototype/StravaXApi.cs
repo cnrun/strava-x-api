@@ -55,9 +55,9 @@ namespace Prototype
             try
             {                
                 if(exec_cmd=="stats")
-                {
                     ret = Prototype.Tools.DbStats.WriteState(args);
-                }
+                else if(exec_cmd=="init")
+                    ret = Prototype.Tools.DbInit.EnsureCreated(args);
                 else
                 {
                     switch(exec_cmd)

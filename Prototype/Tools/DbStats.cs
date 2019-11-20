@@ -1,7 +1,5 @@
 using System;
-using System.Threading;
 using System.Linq;
-using OpenQA.Selenium;
 using Prototype.Model;
 using System.Collections.Generic;
 
@@ -16,7 +14,7 @@ namespace Prototype.Tools
             {
                 using (StravaXApiContext db = new StravaXApiContext())
                 {
-                    Console.WriteLine($"Queries stored {db.ActivityQueriesDB.Count()}");
+                     Console.WriteLine($"Queries stored {db.ActivityQueriesDB.Count()}");
                     Console.WriteLine($"Activities stored {db.ActivityShortDB.Count()}");
                     var al = db.ActivityShortDB.Select(a => a.AthleteId).Distinct();
                     Console.WriteLine($"Athletes {al.Count()} from {db.AthleteShortDB.Count()}");

@@ -54,13 +54,13 @@ namespace Prototype.Model
         public DbSet<ActivityShort> ActivityShortDB { get; set; }
         public DbSet<AthleteShort> AthleteShortDB { get; set; }
         public DbSet<ActivityRangeQuery> ActivityQueriesDB { get; set; }
-        
+
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
             string ConnectionString=Environment.GetEnvironmentVariable("CONNECTION_STRING");
             if (string.IsNullOrEmpty(ConnectionString))
             {
-                options.UseSqlite("Data Source=StravaXApi.db").EnableSensitiveDataLogging();
+                options.UseSqlite("Data Source=data/StravaXApi.db").EnableSensitiveDataLogging();
             }
             else if (ConnectionString.StartsWith("Data Source"))
             {
