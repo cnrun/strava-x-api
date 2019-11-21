@@ -20,8 +20,11 @@ steps:
 - script: |
     cd Prototype
     dotnet tool install --tool-path . dotnet-ef  --version 3.0.0
-    ./dotnet-ef --project ./Prototype.csproj migrations add InitialCreate
+    ./dotnet-ef --project ./Prototype.csproj migrations add InitialCreate    
     mkdir data
+    cd data
+    ../dotnet-ef --project ../Prototype.csproj database update
+    cd ..
     ls -alrt
   displayName: 'EF: create local db'
 # retrieve db stats
