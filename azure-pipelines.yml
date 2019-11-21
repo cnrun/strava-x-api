@@ -21,6 +21,7 @@ steps:
     cd Prototype
     dotnet tool install --tool-path . dotnet-ef  --version 3.0.0
     ./dotnet-ef --project ./Prototype.csproj migrations add InitialCreate
+    mkdir data
     ls -alrt
   displayName: 'EF: create local db'
 # retrieve db stats
@@ -28,6 +29,7 @@ steps:
   inputs:
     command: 'run'
     # path is relative to project path, before the workingDirectory ist evaluated
+    # ./data directory must exists.
     projects: '**/*.csproj'
     arguments: '-c=init'
     workingDirectory: 'Prototype/'
