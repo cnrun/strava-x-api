@@ -11,6 +11,9 @@ pool:
 
 steps:
 - task: Docker@2
+  env:
+    # values overwritten from pipeline variables
+    DOCKER_HOST: $(DOCKER_HOST)
   inputs:
     containerRegistry: 'DockerHub'
     repository: 'strava-x-api'
