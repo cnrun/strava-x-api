@@ -23,6 +23,8 @@ steps:
     ./dotnet-ef --project ./Prototype.csproj migrations add InitialCreate    
     ./dotnet-ef --project ./Prototype.csproj database update
     ls -alrt
+  env:
+    CONNECTION_STRING: $(CONNECTION_STRING)
   displayName: 'EF: create local db'
 # retrieve db stats
 - task: DotNetCoreCLI@2
