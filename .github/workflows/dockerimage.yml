@@ -9,5 +9,6 @@ jobs:
       uses: elgohr/Publish-Docker-Github-Action@master
       with:
         name: cnrun/strava-x-api/strava-x-api
-        username: ""
+        username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.GITHUB_TOKEN }}
+        registry: docker.pkg.github.com
