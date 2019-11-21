@@ -21,14 +21,13 @@ steps:
     cd Prototype
     dotnet tool install --tool-path . dotnet-ef  --version 3.0.0
     ./dotnet-ef --project ./Prototype.csproj migrations add InitialCreate    
-    mkdir data
-    cd data
-    ../dotnet-ef --project ../Prototype.csproj database update
-    cd ..
+    ./dotnet-ef --project ./Prototype.csproj database update
     ls -alrt
   displayName: 'EF: create local db'
 # retrieve db stats
 - task: DotNetCoreCLI@2
+  env:
+    CONNECTION_STRING: $(CONNECTION_STRING)
   inputs:
     command: 'run'
     # path is relative to project path, before the workingDirectory ist evaluated
@@ -59,6 +58,9 @@ steps:
     workingDirectory: 'Prototype/'
 # retrieve db stats
 - task: DotNetCoreCLI@2
+  env:
+    # values overwritten from pipeline variables
+    CONNECTION_STRING: $(CONNECTION_STRING)
   inputs:
     command: 'run'
     # path is relative to project path, before the workingDirectory ist evaluated
