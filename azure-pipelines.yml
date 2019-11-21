@@ -10,15 +10,6 @@ pool:
   vmImage: 'ubuntu-latest'
 
 steps:
-- task: Docker@2
-  env:
-    # values overwritten from pipeline variables
-    DOCKER_HOST: $(DOCKER_HOST)
-  inputs:
-    containerRegistry: 'DockerHub'
-    repository: 'strava-x-api'
-    command: 'buildAndPush'
-    Dockerfile: '**/Prototype.Dockerfile'
 - task: DotNetCoreCLI@2
   inputs:
     command: 'build'
