@@ -139,8 +139,11 @@ namespace Prototype
             foreach(var c in Environment.GetEnvironmentVariable("STRAVA_PWD"))
                 _Password.AppendChar(c);
             _Password.MakeReadOnly();
+            string SeleniumHub = Environment.GetEnvironmentVariable("SELENIUM_HUB");
             if (Environment.GetEnvironmentVariable("BROWSERSTACK")=="ON")
                 initialize_BrowserStack(Environment.GetEnvironmentVariable("BROWSERSTACK_USER"),Environment.GetEnvironmentVariable("BROWSERSTACK_PWD"));
+            else if (!string.IsNullOrEmpty(SeleniumHub))
+                initialize_SeleniumHub(SeleniumHub);
             else
                 initialize_SeleniumLocal();
             
@@ -156,8 +159,20 @@ namespace Prototype
             ChromeOptions Options = new ChromeOptions();
             Options.AddArgument("--window-size=1300,15000");
             Options.AddArgument("--headless");            
+            logger.LogInformation($"start selenium local");
             BrowserDriver = new ChromeDriver(Options);
         }
+        void initialize_SeleniumHub(string SeleniumHubUri)
+        {
+            ChromeOptions Options = new ChromeOptions();
+            Options.AddArgument("--window-size=1300,15000");
+            Options.AddArgument("--headless");            
+            Options.AddArgument("--disable-gpu");
+            Options.AddArgument("--no-sandbox");
+            logger.LogInformation($"start selenium web driver {SeleniumHubUri}");
+            BrowserDriver = new RemoteWebDriver(new Uri(SeleniumHubUri),Options);
+        }
+
         void initialize_BrowserStack(string BrowserStackUserName, string BrowserStackAccessKey)
         {
             // Warnings do not make sence for RemoteWebDriver with BrowserStack
@@ -183,7 +198,9 @@ namespace Prototype
             
             #pragma warning restore CS0618
 
-            BrowserDriver = new RemoteWebDriver(new Uri("http://hub-cloud.browserstack.com/wd/hub/"), capability);
+            string SeleniumHubUri="http://hub-cloud.browserstack.com/wd/hub/";
+            logger.LogInformation($"start selenium browserstack web driver {SeleniumHubUri}");
+            BrowserDriver = new RemoteWebDriver(new Uri(SeleniumHubUri), capability);
             BrowserDriver.Manage().Window.Maximize();
         }
         public void signIn()
