@@ -9,6 +9,12 @@ trigger:
 pool:
   vmImage: 'ubuntu-latest'
 
+- task: Docker@2
+  inputs:
+    containerRegistry: 'GitHub Registry'
+    repository: 'strava-x-api'
+    command: 'buildAndPush'
+    Dockerfile: 'Prototype.Dockerfile'
 steps:
 - task: DotNetCoreCLI@2
   inputs:
