@@ -58,6 +58,8 @@ namespace Prototype
                     ret = Prototype.Tools.DbStats.WriteState(args);
                 else if(exec_cmd=="init")
                     ret = Prototype.Tools.DbInit.EnsureCreated(args);
+                else if(exec_cmd=="clone")
+                    ret = Prototype.Tools.DbClone.DoClone(args);
                 else
                 {
                     switch(exec_cmd)

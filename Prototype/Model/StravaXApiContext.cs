@@ -1,6 +1,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 
+
 // Announcing Entity Framework Core 3.0
 //      https://devblogs.microsoft.com/dotnet/announcing-ef-core-3-0-and-ef-6-3-general-availability/
 // Entity Framework Core
@@ -55,10 +56,20 @@ namespace Prototype.Model
         public DbSet<AthleteShort> AthleteShortDB { get; set; }
         public DbSet<ActivityRangeQuery> ActivityQueriesDB { get; set; }
 
+        private Boolean ignoreEnvironmentVariable;
+        public StravaXApiContext() : base()
+        { ignoreEnvironmentVariable = false; }
+        public StravaXApiContext(DbContextOptions options) : base(options)
+        { ignoreEnvironmentVariable = true; }
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
             string ConnectionString=Environment.GetEnvironmentVariable("CONNECTION_STRING");
-            if (string.IsNullOrEmpty(ConnectionString))
+            if (ignoreEnvironmentVariable)
+            {
+                Console.WriteLine($"database {options}");
+                // no global configuration.
+            }
+            else if (string.IsNullOrEmpty(ConnectionString))
             {
                 options.UseSqlite("Data Source=data/StravaXApi.db").EnableSensitiveDataLogging();
             }
