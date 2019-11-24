@@ -1,9 +1,6 @@
 using System;
-using System.Threading;
 using System.Linq;
-using OpenQA.Selenium;
 using Prototype.Model;
-using System.Collections.Generic;
 
 namespace Prototype.Tools
 {    
@@ -20,10 +17,14 @@ namespace Prototype.Tools
                 Boolean KeepRunning=true;
                 int ErrorCountConsecutive=0;
                 int ErrorCount=0;
-                foreach(ActivityRangeQuery arq in db.ActivityQueriesDB)
+                // https://docs.microsoft.com/en-us/ef/ef6/querying/
+                foreach(ActivityRangeQuery arq in db.ActivityQueriesDB.Where(a => a.Status==QueryStatus.Created))
                 {
                     try
                     {
+                        arq.Status=QueryStatus.Run;
+                        arq.StatusChanged=DateTime.Now;
+                        db.SaveChanges();
                         var ActivitiesList = stravaXApi.getActivities(arq.AthleteId,$"{arq.DateFrom.Year:D4}",$"{arq.DateFrom.Month:D2}");
                         foreach(ActivityShort ActivityShort in ActivitiesList)
                         {
@@ -39,15 +40,20 @@ namespace Prototype.Tools
                                 Console.WriteLine($"{ActivityShort.ActivityId} allready in database");
                             }
                         }
-                        db.Remove(arq);
+                        arq.Status=QueryStatus.Done;
+                        arq.StatusChanged=DateTime.Now;
                         db.SaveChanges();
                         ErrorCountConsecutive=0;
                     }
                     catch(Exception e)
                     {
+                        db.SaveChanges();
                         ErrorCountConsecutive++;
                         ErrorCount++;
                         Console.WriteLine($"Error: {ErrorCountConsecutive}/3 total:{ErrorCount} -> skip:{arq} {e.Message}");
+                        arq.Status=QueryStatus.Error;
+                        arq.StatusChanged=DateTime.Now;
+                        arq.Message=$"Error: {ErrorCountConsecutive}/3 total:{ErrorCount} -> skip:{arq} {e.Message}";
                         if (ErrorCountConsecutive>2)
                         {
                             // After 3 consecutive errors, I assume the selenium driver is down. Stop it all.
@@ -55,7 +61,7 @@ namespace Prototype.Tools
                         }
                     }
                     Console.WriteLine($"Activities total stored = {db.ActivityShortDB.Count()}");
-                    Console.WriteLine($"Request total stored = {db.ActivityQueriesDB.Count()}");
+                    Console.WriteLine($"Request total stored = {db.ActivityQueriesDB.Count(a => a.Status==QueryStatus.Created)}");
                     Count++;
                     if (!KeepRunning)
                     {

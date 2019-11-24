@@ -14,7 +14,7 @@ namespace Prototype.Tools
             {
                 using (StravaXApiContext db = new StravaXApiContext())
                 {
-                     Console.WriteLine($"Queries stored {db.ActivityQueriesDB.Count()}");
+                    Console.WriteLine($"Queries stored {db.ActivityQueriesDB.Count()}");
                     Console.WriteLine($"Activities stored {db.ActivityShortDB.Count()}");
                     var al = db.ActivityShortDB.Select(a => a.AthleteId).Distinct();
                     Console.WriteLine($"Athletes {al.Count()} from {db.AthleteShortDB.Count()}");
@@ -30,6 +30,16 @@ namespace Prototype.Tools
                         {
                             Console.WriteLine($" Activities:{db.ActivityShortDB.Count(a => a.AthleteId==aId),6} for {aId,9}");
                         }
+                    }
+                    foreach(ActivityRangeQuery arq in db.ActivityQueriesDB)
+                    {
+                        Console.WriteLine($"{arq}");
+                        break;
+                    }
+                    var status = db.ActivityQueriesDB.Select(a => a.Status).Distinct();
+                    foreach(var st in status)
+                    {
+                        Console.WriteLine($" {st} {db.ActivityQueriesDB.Count(a => a.Status==st)}");
                     }
                 }
                 ret = 0 ;

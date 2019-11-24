@@ -1,9 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.Text.Json;
-using System.Linq;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using Prototype.Model;
+using System.ComponentModel.DataAnnotations.Schema;
+
 
 namespace Prototype.Model
 {    
@@ -17,13 +17,21 @@ namespace Prototype.Model
         public DateTime DateFrom { get; set; }
         [Key]
         public DateTime DateTo { get; set; }
+        // [NotMapped]
+        public QueryStatus Status { get; set; }
+        // [NotMapped]
+        public string RunOn { get; set; }
+        // [NotMapped]
+        public DateTime StatusChanged { get; set; }
+        // [NotMapped]
+        public string Message { get; set; }
         public ActivityRangeQuery()
         {
 
         }
         override public string ToString()
         {
-            return $"query activities for:{AthleteId} in [{DateFrom}-{DateTo}]";
+            return $"query activities for:{AthleteId} in [{DateFrom}-{DateTo}] status {Status}";
         }
         public string Serialize(ActivityShort value)
         {

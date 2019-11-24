@@ -1,7 +1,6 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 
-
 // Announcing Entity Framework Core 3.0
 //      https://devblogs.microsoft.com/dotnet/announcing-ef-core-3-0-and-ef-6-3-general-availability/
 // Entity Framework Core
