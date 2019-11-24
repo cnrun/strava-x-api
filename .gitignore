@@ -333,3 +333,4 @@ Prototype/screenshots/*
 Prototype/Migrations/*
 Prototype/*.db
 Prototype/data
+.vscode/
