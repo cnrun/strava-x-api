@@ -1,0 +1,8 @@
+# To execute this docker-compose yml file use `docker-compose -f <file_name> up`
+# Add the `-d` flag at the end for detached execution
+version: "3"
+services:
+  firefox:
+    image: selenium/node-firefox:3.141.59-xenon
+    volumes:
+      - /dev/shm:/dev/shm

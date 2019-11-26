@@ -1,6 +1,8 @@
 using System;
 using System.Linq;
 using Prototype.Model;
+using System.Collections.Generic;
+using System.IO;
 
 namespace Prototype.Tools
 {    
@@ -18,7 +20,10 @@ namespace Prototype.Tools
                 int ErrorCountConsecutive=0;
                 int ErrorCount=0;
                 // https://docs.microsoft.com/en-us/ef/ef6/querying/
-                foreach(ActivityRangeQuery arq in db.ActivityQueriesDB.Where(a => a.Status==QueryStatus.Created))
+                // First retrieve all query objects to avoid "New transaction is not allowed because there are other threads running in the session."
+                // Not best praxis but enought for Prototype.
+                IList<ActivityRangeQuery> queries = db.ActivityQueriesDB.Where(a => a.Status==QueryStatus.Created).ToList();
+                foreach(ActivityRangeQuery arq in queries)
                 {
                     try
                     {
@@ -63,7 +68,7 @@ namespace Prototype.Tools
                     Console.WriteLine($"Activities total stored = {db.ActivityShortDB.Count()}");
                     Console.WriteLine($"Request total stored = {db.ActivityQueriesDB.Count(a => a.Status==QueryStatus.Created)}");
                     Count++;
-                    if (!KeepRunning)
+                    if (!KeepRunning || File.Exists("QueryActivities.quit"))
                     {
                         Console.WriteLine($"break {KeepRunning} {Count}");
                         break;
