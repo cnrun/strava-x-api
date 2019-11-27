@@ -160,7 +160,13 @@ namespace Prototype
         {
             ChromeOptions Options = new ChromeOptions();
             Options.AddArgument("--window-size=1300,15000");
-            Options.AddArgument("--headless");            
+            Options.AddArgument("--headless");       
+            // Options for running chrome-driver in docker. And yes! It was a long way to fix this issue.
+            // 
+            // https://stackoverflow.com/a/50642913/281188
+            Options.AddArgument("--disable-gpu");
+            Options.AddArgument("--no-sandbox");            
+            Options.AddArgument("--disable-dev-shm-usage");            
             logger.LogInformation($"start selenium local");
             BrowserDriver = new ChromeDriver(Options);
         }
