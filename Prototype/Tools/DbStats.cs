@@ -37,9 +37,16 @@ namespace Prototype.Tools
                         break;
                     }
                     var status = db.ActivityQueriesDB.Select(a => a.Status).Distinct();
+                    Console.WriteLine($"Queries:");
                     foreach(var st in status)
                     {
                         Console.WriteLine($" {st} {db.ActivityQueriesDB.Count(a => a.Status==st)}");
+                    }
+                    Console.WriteLine($"Activity types Σ :{db.ActivityShortDB.Count()}");
+                    var ActivityTypes = db.ActivityShortDB.Select(a => a.ActivityType).Distinct();
+                    foreach(var aType in ActivityTypes)
+                    {
+                        Console.WriteLine($" {aType,18} {db.ActivityShortDB.Count(a => a.ActivityType==aType),6}");
                     }
                 }
                 ret = 0 ;
