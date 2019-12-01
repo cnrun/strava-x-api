@@ -3,6 +3,8 @@ using System.Linq;
 using Prototype.Model;
 using System.Collections.Generic;
 using System.IO;
+using NDesk.Options;
+using System.Diagnostics;
 
 namespace Prototype.Tools
 {    
@@ -10,6 +12,14 @@ namespace Prototype.Tools
     {
         static internal int SendQueriesForActivities(StravaXApi stravaXApi, string[] args)
         {
+            int TimerSeconds = -1;
+            int TimerExitCode = 2;
+            var p = new OptionSet () {
+                { "t|timer_sec=",   v => { TimerSeconds=int.Parse(v); } },
+                { "e|timer_exit_code=",   v => { TimerExitCode=int.Parse(v); } },
+            };
+            p.Parse(args);
+
             int ret = -1;
             Console.WriteLine("Query activities.");
             using (StravaXApiContext db = new StravaXApiContext())
@@ -23,6 +33,8 @@ namespace Prototype.Tools
                 // First retrieve all query objects to avoid "New transaction is not allowed because there are other threads running in the session."
                 // Not best praxis but enought for Prototype.
                 IList<ActivityRangeQuery> queries = db.ActivityQueriesDB.Where(a => a.Status==QueryStatus.Created).ToList();
+                Stopwatch stopWatch = new Stopwatch();
+                stopWatch.Start();
                 foreach(ActivityRangeQuery arq in queries)
                 {
                     try
@@ -68,6 +80,15 @@ namespace Prototype.Tools
                     Console.WriteLine($"Activities total stored = {db.ActivityShortDB.Count()}");
                     Console.WriteLine($"Request total stored = {db.ActivityQueriesDB.Count(a => a.Status==QueryStatus.Created)}");
                     Count++;
+                    TimeSpan ts = stopWatch.Elapsed;
+                    if (TimerSeconds>0 && ts.TotalSeconds>TimerSeconds)
+                    {
+                        Console.WriteLine($"Timer reached after {ts.ToString()} now exit with {TimerExitCode}.");
+                        ret = TimerExitCode;
+                        break;
+                    }
+                    // Exist when KeepRunning is false (from the debugger),
+                    // or the file 'QueryActivities.quit' exists.
                     if (!KeepRunning || File.Exists("QueryActivities.quit"))
                     {
                         Console.WriteLine($"break {KeepRunning} {Count}");
