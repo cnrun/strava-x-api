@@ -18,6 +18,7 @@ namespace Prototype.Tools
                     Console.WriteLine($"Activities stored {db.ActivityShortDB.Count()}");
                     var al = db.ActivityShortDB.Select(a => a.AthleteId).Distinct();
                     Console.WriteLine($"Athletes {al.Count()} from {db.AthleteShortDB.Count()}");
+                    /*
                     foreach(var aId in al)
                     {
                         AthleteShort ath = db.AthleteShortDB.Find(aId);
@@ -31,6 +32,7 @@ namespace Prototype.Tools
                             Console.WriteLine($" Activities:{db.ActivityShortDB.Count(a => a.AthleteId==aId),6} for {aId,9}");
                         }
                     }
+                    */
                     foreach(ActivityRangeQuery arq in db.ActivityQueriesDB)
                     {
                         Console.WriteLine($"{arq}");
@@ -48,6 +50,24 @@ namespace Prototype.Tools
                     {
                         Console.WriteLine($" {aType,18} {db.ActivityShortDB.Count(a => a.ActivityType==aType),6}");
                     }
+                    Console.WriteLine($"All athletes with {ActivityType.BackcountrySki}");
+                    var Activity4Type = db.ActivityShortDB.Where(a => a.ActivityType==ActivityType.BackcountrySki).Select(a => a.AthleteId).Distinct();
+                    foreach(var A4Type in Activity4Type)
+                    {
+                        var count = db.ActivityShortDB.Where(a => a.ActivityType==ActivityType.BackcountrySki).Where(a => a.AthleteId==A4Type).Count();
+                        var athlete = db.AthleteShortDB.Find(A4Type);
+                        Console.WriteLine($" {athlete?.AthleteName,30} : {A4Type,8} ({count})");
+                    }
+                    /*
+                    Console.WriteLine($"All athletes with {ActivityType.Run}");
+                    Activity4Type = db.ActivityShortDB.Where(a => a.ActivityType==ActivityType.Run).Select(a => a.AthleteId).Distinct();
+                    foreach(var A4Type in Activity4Type)
+                    {
+                        var count = db.ActivityShortDB.Where(a => a.ActivityType==ActivityType.Run).Where(a => a.AthleteId==A4Type).Count();
+                        var athlete = db.AthleteShortDB.Find(A4Type);
+                        Console.WriteLine($" {athlete?.AthleteName,30} : {A4Type,8} ({count})");
+                    }
+                    */
                 }
                 ret = 0 ;
             }
