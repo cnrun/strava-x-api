@@ -3,6 +3,7 @@ using System.Linq;
 using Prototype.Model;
 using System.Collections.Generic;
 using System.IO;
+using Microsoft.EntityFrameworkCore;
 using NDesk.Options;
 using System.Diagnostics;
 
@@ -39,9 +40,20 @@ namespace Prototype.Tools
                 {
                     try
                     {
-                        arq.Status=QueryStatus.Run;
-                        arq.StatusChanged=DateTime.Now;
-                        db.SaveChanges();
+                        // https://docs.microsoft.com/en-us/ef/core/saving/concurrency
+                        try
+                        {
+                            // reserve query, mark it as run.
+                            arq.Status=QueryStatus.Run;
+                            arq.StatusChanged=DateTime.Now;
+                            db.SaveChanges();
+                        }
+                        catch(DbUpdateConcurrencyException)
+                        {
+                            // Just skip this entry if some conflict exists.
+                            Console.WriteLine($"skip conflicted entry for {arq.AthleteId} at {arq.DateFrom.Year:D4}/{arq.DateFrom.Month:D2}");
+                            continue;
+                        }
                         var ActivitiesList = stravaXApi.getActivities(arq.AthleteId,$"{arq.DateFrom.Year:D4}",$"{arq.DateFrom.Month:D2}");
                         foreach(ActivityShort ActivityShort in ActivitiesList)
                         {
@@ -49,8 +61,16 @@ namespace Prototype.Tools
                             if (db.ActivityShortDB.Find(ActivityShort.ActivityId)==null)
                             {
                                 db.ActivityShortDB.Add(ActivityShort);
-                                db.SaveChanges();
-                                Console.WriteLine($"Enterred Activities: {db.ActivityShortDB.OrderBy(b => b.ActivityId).Count()}");
+                                try{
+                                    db.SaveChanges();
+                                    Console.WriteLine($"Enterred Activities: {db.ActivityShortDB.OrderBy(b => b.ActivityId).Count()}");
+                                }
+                                catch(DbUpdateConcurrencyException)
+                                {
+                                    // Just skip this entry if some conflict exists.
+                                    Console.WriteLine($"skip conflicted activity {ActivityShort}");
+                                    continue;
+                                }
                             }
                             else
                             {
@@ -59,9 +79,13 @@ namespace Prototype.Tools
                         }
                         arq.Status=QueryStatus.Done;
                         arq.StatusChanged=DateTime.Now;
+                        // should not have to save anything.
                         db.SaveChanges();
                         ErrorCountConsecutive=0;
                     }
+                    // catch(DbUpdateConcurrencyException)
+                    // {
+                    // }
                     catch(Exception e)
                     {
                         db.SaveChanges();
