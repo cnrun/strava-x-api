@@ -36,6 +36,13 @@ namespace Prototype.Model
         Windsurf,
         Workout,
         Yoga,
+        Handcycle,
+        Wintersport,
+        Sail,
+        Wheelchair,
+        Watersport,
+        Soccer,
+        Velomobile,
         // If ActivityType is not availlable at this time [10/2019]
         Other
     }
