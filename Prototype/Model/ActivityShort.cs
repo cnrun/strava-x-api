@@ -21,54 +21,87 @@ namespace Prototype.Model
         public string StatShortString { get; set; }
 
         // List as string: https://stackoverflow.com/a/31648135
-        [Column]
-        [Required]
-        private String ActivityImagesListAsString { get; set; }
+
+        //
+        // ActivityImagesList
+        //
+        private List<String> _ActivityImagesList { get; set;}
         [NotMapped]
         public List<String> ActivityImagesList { 
             get {
-                return ActivityImagesListAsString.Split(',').ToList();
+                return _ActivityImagesList;
             }
             set {
-                ActivityImagesListAsString = String.Join(",", value);
+                _ActivityImagesList = value;
             }
         }
-        [Column]
         [Required]
-        private String ActivityThumbnailsListAsString { get; set; }
+        public String ActivityImagesListAsString
+        { 
+            get { return String.Join(',', _ActivityImagesList); }
+            set { _ActivityImagesList = value.Split(',').ToList(); }
+        }
+
+        //
+        // ActivityThumbnailsList
+        //
+        private List<String> _ActivityThumbnailsList { get; set;}
         [NotMapped]
-        public List<String> ActivityThumbnailsList {
+        public List<String> ActivityThumbnailsList { 
             get {
-                return ActivityThumbnailsListAsString.Split(',').ToList();
+                return _ActivityThumbnailsList;
             }
             set {
-                ActivityThumbnailsListAsString = String.Join(",", value);
+                _ActivityThumbnailsList = value;
             }
         }
-        [Column]
         [Required]
-        private string GroupActivityListAsString { get; set; }
+        public String ActivityThumbnailsListAsString
+        { 
+            get { return String.Join(',', _ActivityThumbnailsList); }
+            set { _ActivityThumbnailsList = value.Split(',').ToList(); }
+        }
+
+        //
+        // GroupActivityList
+        //
+        private List<String> _GroupActivityList { get; set;}
         [NotMapped]
-        public List<String> GroupActivityList {
+        public List<String> GroupActivityList { 
             get {
-                return GroupActivityListAsString.Split(',').ToList();
+                return _GroupActivityList;
             }
             set {
-                GroupActivityListAsString = String.Join(",", value);
+                _GroupActivityList = value;
             }
         }
-        [Column]
         [Required]
-        private string GroupAthleteListAsString { get; set; }
+        public String GroupActivityListAsString
+        { 
+            get { return String.Join(',', _GroupActivityList); }
+            set { _GroupActivityList = value.Split(',').ToList(); }
+        }
+
+        //
+        // GroupActivityList
+        //
+        private List<String> _GroupAthleteList { get; set;}
         [NotMapped]
-        public List<String> GroupAthleteList {
+        public List<String> GroupAthleteList { 
             get {
-                return GroupActivityListAsString.Split(',').ToList();
+                return _GroupAthleteList;
             }
             set {
-                GroupActivityListAsString = String.Join(",", value);
+                _GroupAthleteList = value;
             }
         }
+        [Required]
+        public String GroupAthleteListAsString
+        { 
+            get { return String.Join(',', _GroupAthleteList); }
+            set { _GroupAthleteList = value.Split(',').ToList(); }
+        }
+
         public ActivityShort()
         {
         }
