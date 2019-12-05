@@ -10,3 +10,7 @@ Select
     (Select count(*) from dbo.ActivityShortDB ) AS "Activities",
     -- ativities count
     (Select count(*) from dbo.ActivityShortDB Where ActivityType='6') AS "Ski"
+
+-- select * from dbo.AthleteShortDB where AthleteName like 'wolf%maier%'
+-- select * from dbo.ActivityShortDB WHERE AthleteId=7512838 ORDER BY ActivityDate
+-- select count(*) from dbo.ActivityShortDB WHERE AthleteId=7512838
