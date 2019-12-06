@@ -82,7 +82,7 @@ namespace Prototype
                             ret = Prototype.Tools.AthletesCrawler.ReadAthleteConnectionsForAthlete(StravaXApi, args);
                         break;
                         case "get-queries":
-                            ret = Prototype.Tools.QueriesGenerator.WriteQueriesForAthletes(StravaXApi, args);
+                            ret = Prototype.Tools.QueriesGenerator.WriteQueriesForAthletes(StravaXApi);
                         break;
                         case "query-activities":
                             ret = Prototype.Tools.QueryActivities.SendQueriesForActivities(StravaXApi, args);

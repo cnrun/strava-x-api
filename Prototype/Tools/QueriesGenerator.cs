@@ -1,12 +1,14 @@
 using System;
 using System.Linq;
 using Prototype.Model;
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Prototype.Tools
 {    
     public class QueriesGenerator
     {
-        static internal int WriteQueriesForAthletes(StravaXApi stravaXApi, string[] args)
+        static internal int WriteQueriesForAthletes(StravaXApi stravaXApi)
         {
             int ret = -1 ;
             Console.WriteLine("Create range queries.");
@@ -15,13 +17,19 @@ namespace Prototype.Tools
                 stravaXApi.signIn();
                 try
                 {
-                    var AllAthletes = db.AthleteShortDB;
+                    // https://docs.microsoft.com/en-us/ef/ef6/querying/
+                    // First retrieve all query objects to avoid "New transaction is not allowed because there are other threads running in the session."
+                    // Not best praxis but enought for Prototype.
+                    IList<AthleteShort> AllAthletes = db.AthleteShortDB.ToList();
+                    Stopwatch stopWatch = new Stopwatch();
+                    stopWatch.Start();
                     foreach(AthleteShort Athlete in AllAthletes)
                     {
-                        Console.WriteLine($"Athlete:{Athlete}");
+                        TimeSpan ts = stopWatch.Elapsed;
                         try
                         {
                             WriteQueriesForAthlete(stravaXApi, db, Athlete.AthleteId);
+                            Console.WriteLine($"Athlete:{Athlete} run since:{ts.TotalSeconds}s");
                         }
                         catch(Exception e)
                         {

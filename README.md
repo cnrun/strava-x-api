@@ -1,5 +1,24 @@
 # strava-x-api
-Release Strava Api limitations by using the web frontend functionalities with Selenium 
+Release Strava Api limitations by using the web frontend functionalities with Selenium.
+
+From empty DB:
+1) dotnet ef migrations add InitialCreate
+2) dotnet ef database update
+
+export CONNECTION_STRING=[YOUR_CONNECTION_STRING]
+export STRAVA_USER=[YOUR_STRAVA_USER]
+export STRAVA_PWD=[YOUT_STRAVA_PWD]
+
+A) Read all Athlete Connections:
+dotnet run -- -c=get-athletes --athleteid=123456
+
+
+
+B) Retrieve all range queries
+create Queries for all athlete in the database:
+dotnet run -- -c=get-queries
+
+
 
 [![Build Status](https://dev.azure.com/cnrun/strava-x-api/_apis/build/status/cnrun.strava-x-api?branchName=master)](https://dev.azure.com/cnrun/strava-x-api/_build/latest?definitionId=1&branchName=master)
 Automation pipeline bei Azure
