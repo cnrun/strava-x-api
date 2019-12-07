@@ -113,12 +113,14 @@ namespace Prototype.Tools
                     }
                     // Exist when KeepRunning is false (from the debugger),
                     // or the file 'QueryActivities.quit' exists.
+                    //   *Program will exit with "touch QueryActivities.quit" in /app directory in container.
                     if (!KeepRunning || File.Exists("QueryActivities.quit"))
                     {
                         Console.WriteLine($"break {KeepRunning} {Count}");
                         break;
                     }
                 }
+                ret = 0;
             }
             return ret;
         }

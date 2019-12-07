@@ -1,0 +1,30 @@
+#
+#
+az container create \
+ --resource-group $ACI_PERS_RESOURCE_GROUP \
+ --name strava-x-api-getqueries \
+ --image cnrun/strava-x-api:chrome \
+ --restart-policy OnFailure \
+ --command-line 'dotnet Prototype.dll -c=get-queries' \
+ --environment-variables 'CONNECTION_STRING=$CONNECTION_STRING' 'STRAVA_USER=$STRAVA_USER' 'STRAVA_PWD=$STRAVA_PWD' \
+ --dns-name-label strava-x-api-getqueries \
+ --ports 80 \
+
+
+#
+# Create and start a crawling container.
+# Screenshots are saved in the mounted Azure volume. https://docs.microsoft.com/de-de/azure/container-instances/container-instances-volume-azure-files
+#
+az container create \
+ --resource-group $ACI_PERS_RESOURCE_GROUP \
+ --name strava-x-api-crawl \
+ --image cnrun/strava-x-api:chrome \
+ --restart-policy OnFailure \
+ --command-line 'dotnet Prototype.dll -c=query-activities --ScreenshotsMonthActivities' \
+ --environment-variables 'CONNECTION_STRING=$CONNECTION_STRING' 'STRAVA_USER=$STRAVA_USER' 'STRAVA_PWD=$STRAVA_PWD' \
+ --dns-name-label strava-x-api-crawl \
+ --ports 80 \
+ --azure-file-volume-account-name $ACI_PERS_STORAGE_ACCOUNT_NAME \
+ --azure-file-volume-account-key $STORAGE_KEY \
+ --azure-file-volume-share-name $ACI_PERS_SHARE_NAME \
+ --azure-file-volume-mount-path /app/screenshots
