@@ -1,6 +1,19 @@
 #
 #
 az container create \
+ --resource-group elp \
+ --name strava-x-api--get-athletes \
+ --image cnrun/strava-x-api:chrome \
+ --restart-policy OnFailure \
+ --command-line 'dotnet Prototype.dll -c=get-athletes --athleteid=[$ATHLETE_ID]' \
+ --environment-variables 'CONNECTION_STRING=$CONNECTION_STRING' 'STRAVA_USER=$STRAVA_USER' 'STRAVA_PWD=$STRAVA_PWD' \
+ --dns-name-label strava-x-api--get-athletes \
+ --ports 80
+
+
+#
+#
+az container create \
  --resource-group $ACI_PERS_RESOURCE_GROUP \
  --name strava-x-api-getqueries \
  --image cnrun/strava-x-api:chrome \
