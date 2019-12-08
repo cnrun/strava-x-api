@@ -36,6 +36,7 @@ namespace Prototype.Tools
                 IList<ActivityRangeQuery> queries = db.ActivityQueriesDB.Where(a => a.Status==QueryStatus.Created).ToList();
                 Stopwatch stopWatch = new Stopwatch();
                 stopWatch.Start();
+                ret = 0;
                 foreach(ActivityRangeQuery arq in queries)
                 {
                     try
@@ -83,9 +84,6 @@ namespace Prototype.Tools
                         db.SaveChanges();
                         ErrorCountConsecutive=0;
                     }
-                    // catch(DbUpdateConcurrencyException)
-                    // {
-                    // }
                     catch(Exception e)
                     {
                         db.SaveChanges();
@@ -108,6 +106,7 @@ namespace Prototype.Tools
                     if (TimerSeconds>0 && ts.TotalSeconds>TimerSeconds)
                     {
                         Console.WriteLine($"Timer reached after {ts.ToString()} now exit with {TimerExitCode}.");
+                        // exit with error code, container should restart
                         ret = TimerExitCode;
                         break;
                     }
@@ -117,10 +116,11 @@ namespace Prototype.Tools
                     if (!KeepRunning || File.Exists("QueryActivities.quit"))
                     {
                         Console.WriteLine($"break {KeepRunning} {Count}");
+                        // regular exit, container should ended.
+                        ret = 0;
                         break;
                     }
                 }
-                ret = 0;
             }
             return ret;
         }
