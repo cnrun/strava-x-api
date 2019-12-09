@@ -35,6 +35,7 @@ namespace Prototype.Tools
                         {
                             Console.WriteLine($"SKIP:{Athlete.AthleteId} {e.ToString()}");  
                         }
+                        db.SaveChanges();
                     }
                     ret = 0 ;
                 }
@@ -53,35 +54,106 @@ namespace Prototype.Tools
 
         static void WriteQueriesForAthlete(StravaXApi stravaXApi, StravaXApiContext db, string AthleteId)
         {
-            DateTime FirstActivityDate = stravaXApi.getActivityRange(AthleteId);
-            System.Console.WriteLine($"First activity at {FirstActivityDate.Year}/{FirstActivityDate.Month}");                    
             DateTime Now = DateTime.Now;
 
-            int FromYear=FirstActivityDate.Year;
-            int FromMonth=FirstActivityDate.Month;
             int ToYear=Now.Year;
             int ToMonth=Now.Month;
-            Console.WriteLine($"Enterred queries: {db.ActivityQueriesDB.Count()}");
-            // first year
-            for(int month=FromMonth;month<=12;month++)
+            //
+            // Verify if queries have to be generated
+            //
+
+            // Retrieve all entered quries or the wanted athlete.
+            List<ActivityRangeQuery> queriesForPatient = db.ActivityQueriesDB.Where(a => a.AthleteId==AthleteId).OrderBy(a => a.DateFrom).ToList();
+            int FromYear;
+            int FromMonth;
+
+            // retrieve first and last date
+            DateTime minDT = queriesForPatient.First().DateFrom;
+            DateTime maxDT = queriesForPatient.Last().DateFrom;
+            int UpdateNeed = 0;
+            // If we already have an entry, we assume that the entry contains the first activity date, as it is expensive to retrieve its value with Selenium.
+            if (queriesForPatient.Count==0)
             {
-                AddQuery(db, AthleteId, new DateTime(FromYear,month,1), new DateTime(FromYear,month,1).AddMonths(1).AddDays(-1));
+                // Retrieve the first activity date with selenium
+                DateTime FirstActivityDate = stravaXApi.getActivityRange(AthleteId);
+                System.Console.WriteLine($"First activity at {FirstActivityDate.Year}/{FirstActivityDate.Month}");                    
+                FromYear=FirstActivityDate.Year;
+                FromMonth=FirstActivityDate.Month;
             }
-            // all years after
-            for(int year=FromYear+1;year<=ToYear-1;year++)
+            else
             {
-                for(int month=01;month<=12;month++)
+                FromYear=minDT.Year;
+                FromMonth=minDT.Month;
+            }
+
+            // an update is needed if the wanted range is not included in saved one.
+            if (new DateTime(FromYear,FromMonth,1) < minDT)
+            {
+                UpdateNeed |= 1;
+            }
+            if (new DateTime(ToYear,ToMonth,1) > maxDT)
+            {
+                UpdateNeed |= 2;
+            }
+
+            // Compare the theoric count between both date with the entered one.
+            int TotalWantedQueries;
+            if (FromYear==ToYear)
+            {
+                TotalWantedQueries=Math.Abs(FromMonth-ToMonth)+1;
+            }
+            else
+            {
+                TotalWantedQueries=12-FromMonth+1;
+                int NumberFullYears=ToYear-FromYear-1;
+                if (NumberFullYears>0)
+                    TotalWantedQueries+=12*NumberFullYears;
+                TotalWantedQueries=ToMonth;                
+            }
+            if (TotalWantedQueries>queriesForPatient.Count)
+            {
+                UpdateNeed |= 3;
+            }
+            
+            if (UpdateNeed==0)
+            {
+                Console.WriteLine($"SKIP ({UpdateNeed}) queries wanted:{TotalWantedQueries}/enterred:{queriesForPatient.Count}/total:{db.ActivityQueriesDB.Count()}");
+            }
+            else
+            {
+                Console.WriteLine($"queries wanted:{TotalWantedQueries}/enterred:{queriesForPatient.Count}/total:{db.ActivityQueriesDB.Count()}");
+                if (FromYear==ToYear)
                 {
-                    AddQuery(db, AthleteId, new DateTime(year,month,1), new DateTime(year,month,1).AddMonths(1).AddDays(-1));
+                    for(int month=FromMonth;month<=ToMonth;month++)
+                    {
+                        AddQuery(db, AthleteId, new DateTime(FromYear,month,1), new DateTime(FromYear,month,1).AddMonths(1).AddDays(-1));
+                    }
+                }
+                else
+                {
+                    // first year
+                    for(int month=FromMonth;month<=12;month++)
+                    {
+                        AddQuery(db, AthleteId, new DateTime(FromYear,month,1), new DateTime(FromYear,month,1).AddMonths(1).AddDays(-1));
+                    }
+                    // all years after
+                    for(int year=FromYear+1;year<=ToYear-1;year++)
+                    {
+                        for(int month=01;month<=12;month++)
+                        {
+                            AddQuery(db, AthleteId, new DateTime(year,month,1), new DateTime(year,month,1).AddMonths(1).AddDays(-1));
+                        }
+                    }
+                    // last year
+                    for(int month=01;month<=ToMonth;month++)
+                    {
+                        // from first day of month to last day of the month
+                        AddQuery(db, AthleteId, new DateTime(ToYear,month,1), new DateTime(ToYear,month,1).AddMonths(1).AddDays(-1));
+                    }
                 }
             }
-            // last year
-            for(int month=01;month<=ToMonth;month++)
-            {
-                // from first day of month to last day of the month
-                AddQuery(db, AthleteId, new DateTime(ToYear,month,1), new DateTime(ToYear,month,1).AddMonths(1).AddDays(-1));
-            }
-            Console.WriteLine($"Enterred queries: {db.ActivityQueriesDB.Count()}");
+            queriesForPatient = db.ActivityQueriesDB.Where(a => a.AthleteId==AthleteId).OrderBy(a => a.DateFrom).ToList();
+            Console.WriteLine($"✅ wanted:{TotalWantedQueries}/enterred:{queriesForPatient.Count}/total:{db.ActivityQueriesDB.Count()}");
         }
         static private void AddQuery(StravaXApiContext db, String AthleteId, DateTime DateFrom, DateTime DateTo)
         {
@@ -92,7 +164,6 @@ namespace Prototype.Tools
                 query.DateFrom=DateFrom;
                 query.DateTo=DateTo;
                 db.ActivityQueriesDB.Add(query);
-                db.SaveChanges();
                 Console.WriteLine($"add query for {query}");
             }            
         }
