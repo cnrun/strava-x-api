@@ -13,6 +13,7 @@ namespace Prototype.Tools
     {
         static internal int SendQueriesForActivities(StravaXApi stravaXApi, string[] args)
         {
+            string clientId = new Guid().ToString();
             int TimerSeconds = -1;
             int TimerExitCode = 2;
             var p = new OptionSet () {
@@ -22,7 +23,7 @@ namespace Prototype.Tools
             p.Parse(args);
 
             int ret = -1;
-            Console.WriteLine("Query activities.");
+            Console.WriteLine($"Query activities. Client:{clientId}");
             using (StravaXApiContext db = new StravaXApiContext())
             {
                 stravaXApi.signIn();
@@ -30,10 +31,52 @@ namespace Prototype.Tools
                 Boolean KeepRunning=true;
                 int ErrorCountConsecutive=0;
                 int ErrorCount=0;
+
+                // 1) find an athlete with opened queries and without reserved queries.
+                // string aid =db.ActivityQueriesDB.Where(a => a.Status==QueryStatus.Created).First().AthleteId;
+                // select distinct AthleteId from [dbo].[ActivityQueriesDB] where Status=2
+                // intersect
+                // select distinct AthleteId from [dbo].[ActivityQueriesDB] where (Status<>0 AND Status<>3)
+
+                var q1 = db.ActivityQueriesDB.Where(a => a.Status==QueryStatus.Created).Select(a => a.AthleteId).Distinct();    
+                var q2 = db.ActivityQueriesDB.Where(a => a.Status!>QueryStatus.Reserved).Select(a => a.AthleteId).Distinct();    
+                List<string> AthleteIdList = q1.Intersect(q2).Take(100).ToList();
+                string aid =AthleteIdList.ElementAt(new Random().Next(AthleteIdList.Count));
+                Console.WriteLine($"retrieve activity for athlete {aid}");
+
                 // https://docs.microsoft.com/en-us/ef/ef6/querying/
                 // First retrieve all query objects to avoid "New transaction is not allowed because there are other threads running in the session."
                 // Not best praxis but enought for Prototype.
-                IList<ActivityRangeQuery> queries = db.ActivityQueriesDB.Where(a => a.Status==QueryStatus.Created).ToList();
+                // https://stackoverflow.com/a/2656612/281188
+                // IList<ActivityRangeQuery> queries = db.ActivityQueriesDB.Where(a => a.Status==QueryStatus.Created).OrderByDescending(a => a.DateFrom).Take(50).ToList();
+                IList<ActivityRangeQuery> q0 = db.ActivityQueriesDB.Where(a => a.AthleteId==aid && a.Status==QueryStatus.Created).OrderByDescending(a => a.DateFrom).Take(50).ToList();
+                if (q0.Count==0)
+                {
+                    // no queries anymore for this athlete, choose another one.
+                    // should not happens because we have explicitly searched after athlete with query status "CREATED"
+                    Console.WriteLine($"WARNING: some valide queries have been found for {aid} not entry has been found.");
+                }
+
+                // Mark all queries with "RESERVED"
+                IList<ActivityRangeQuery> queries = new List<ActivityRangeQuery>();
+                foreach(ActivityRangeQuery arq in q0)
+                {
+                    try
+                    {
+                        arq.Status=QueryStatus.Reserved;                    
+                        arq.StatusChanged=DateTime.Now;
+                        arq.Message=$"Reserved by {clientId}";
+                        db.SaveChanges();
+                        queries.Add(arq);
+                    }
+                    catch(DbUpdateConcurrencyException)
+                    {
+                        // Just skip this entry if some conflict exists.
+                        Console.WriteLine($"skip: Can't reserve query {arq.AthleteId} at {arq.DateFrom.Year:D4}/{arq.DateFrom.Month:D2} for {clientId}");
+                        continue;
+                    }
+                }
+                // Run for all reserved queries
                 Stopwatch stopWatch = new Stopwatch();
                 stopWatch.Start();
                 ret = 0;
@@ -86,7 +129,6 @@ namespace Prototype.Tools
                     }
                     catch(Exception e)
                     {
-                        db.SaveChanges();
                         ErrorCountConsecutive++;
                         ErrorCount++;
                         Console.WriteLine($"Error: {ErrorCountConsecutive}/3 total:{ErrorCount} -> skip:{arq} {e.Message}");

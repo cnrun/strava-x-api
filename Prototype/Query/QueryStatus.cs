@@ -8,6 +8,7 @@ namespace Prototype.Model
         Created,
         Run,
         Error,
-        Done
+        Done,
+        Reserved,
     }
 }
