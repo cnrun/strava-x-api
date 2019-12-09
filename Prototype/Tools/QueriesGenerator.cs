@@ -67,9 +67,6 @@ namespace Prototype.Tools
             int FromYear;
             int FromMonth;
 
-            // retrieve first and last date
-            DateTime minDT = queriesForPatient.First().DateFrom;
-            DateTime maxDT = queriesForPatient.Last().DateFrom;
             // If we already have an entry, we assume that the entry contains the first activity date, as it is expensive to retrieve its value with Selenium.
             if (queriesForPatient.Count==0)
             {
@@ -81,6 +78,9 @@ namespace Prototype.Tools
             }
             else
             {
+                // retrieve first and last date
+                DateTime minDT = queriesForPatient.First().DateFrom;
+                DateTime maxDT = queriesForPatient.Last().DateFrom;
                 FromYear=minDT.Year;
                 FromMonth=minDT.Month;
             }
