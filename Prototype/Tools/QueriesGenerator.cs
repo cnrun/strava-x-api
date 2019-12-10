@@ -62,7 +62,7 @@ namespace Prototype.Tools
             // Verify if queries have to be generated
             //
 
-            // Retrieve all entered quries or the wanted athlete.
+            // Retrieve all entered queries or the wanted athlete.
             List<ActivityRangeQuery> queriesForPatient = db.ActivityQueriesDB.Where(a => a.AthleteId==AthleteId).OrderBy(a => a.DateFrom).ToList();
             int FromYear;
             int FromMonth;
@@ -80,7 +80,7 @@ namespace Prototype.Tools
             {
                 // retrieve first and last date
                 DateTime minDT = queriesForPatient.First().DateFrom;
-                DateTime maxDT = queriesForPatient.Last().DateFrom;
+                // DateTime maxDT = queriesForPatient.Last().DateFrom;
                 FromYear=minDT.Year;
                 FromMonth=minDT.Month;
             }
@@ -115,8 +115,8 @@ namespace Prototype.Tools
                 }
             }
 
-            queriesForPatient = db.ActivityQueriesDB.Where(a => a.AthleteId==AthleteId).OrderBy(a => a.DateFrom).ToList();
-            Console.WriteLine($"✅ enterred:{queriesForPatient.Count}/total:{db.ActivityQueriesDB.Count()}");
+            int qCount = db.ActivityQueriesDB.Where(a => a.AthleteId==AthleteId).Count();
+            Console.WriteLine($"✅ enterred:{qCount}/total:{db.ActivityQueriesDB.Count()}");
         }
         static private void AddQuery(StravaXApiContext db, String AthleteId, DateTime DateFrom, DateTime DateTo, List<ActivityRangeQuery> queriesForPatient)
         {

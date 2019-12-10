@@ -13,7 +13,34 @@ using NDesk.Options;
 using Microsoft.Extensions.Logging;
 namespace Prototype
 {
-
+    public class TooManyStravaRequestException : Exception
+    {
+        public TooManyStravaRequestException(string Message): base(Message)
+        {}
+    }
+    public class AthleteException : Exception
+    {
+        public string AthleteId {get; protected set;}
+        public AthleteException(string AthleteId)
+        {
+            this.AthleteId=AthleteId;
+        }
+        public AthleteException(string AthleteId, string message):base(message)
+        {
+            this.AthleteId=AthleteId;
+        }
+    }
+    public class PrivateAthleteException : AthleteException
+    {
+        public PrivateAthleteException(string AthleteId):base(AthleteId)
+        {}
+    }
+    public class NoFirstDateFoundException : AthleteException
+    {
+        public NoFirstDateFoundException(string AthleteId, string message):base(AthleteId, message)
+        {}
+        
+    }
     public class ConnectedAthlete : AthleteShort
     {
         public string ConnectionState { get; set;}
@@ -220,7 +247,26 @@ namespace Prototype
             BrowserDriver.FindElement(By.Name("password")).SendKeys(new System.Net.NetworkCredential("", Password).Password);
             BrowserDriver.FindElement(By.Id("login-button")).Click();
             // Wait until Login is done.
-            new WebDriverWait(BrowserDriver, TimeSpan.FromSeconds(30)).Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementExists((By.XPath("//div[@class='media']"))));
+            try
+            {
+                new WebDriverWait(BrowserDriver, TimeSpan.FromSeconds(30)).Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementExists((By.XPath("//div[@class='media']"))));
+            }
+            catch(WebDriverTimeoutException e)
+            {   
+                try
+                {
+                    var Text = BrowserDriver.FindElement(By.XPath("/html/body/pre")).Text;
+                    if ("Too Many Requests"==Text)
+                    {
+                        throw new TooManyStravaRequestException("Strava do not accept to much queries in such a short time, try to delay at least 1000ms between two request. This account have to wait several hours.");
+                    }
+                }
+                catch(WebDriverException)
+                {
+                    // Everything OK, Strava is not in await mode.
+                }
+                throw e;
+            }
         }
 
         public void signOut()
@@ -240,8 +286,45 @@ namespace Prototype
             logger.LogInformation($"open {url}");
             logger.LogDebug($"open {url}");
 
+            ICollection<IWebElement> Elts;
+            try
+            {
+                // search for pull down to locate firste activity date.
+                Elts=BrowserDriver.FindElements(By.XPath("//div[@id='interval-graph']/div/div/ul/li/a"));
+            }
+            catch(WebDriverException)
+            {
+                Elts=null;
+            }
+            if (Elts==null || Elts.Count==0)
+            {
+                try
+                {
+                    var Text = BrowserDriver.FindElement(By.XPath("/html/body/pre")).Text;
+                    if ("Too Many Requests"==Text)
+                    {
+                        throw new TooManyStravaRequestException("Strava do not accept to much queries in such a short time, try to delay at least 1000ms between two request. This account have to wait several hours.");
+                    }
+                }
+                catch(WebDriverException)
+                {
+                    // Everything OK, Strava is not in await mode.
+                }
+                // we may not have access to none-public profiles.
+                // //*[@id="athlete-profile"]/div[2]/div[1]/div[1]/div/div[1]/div[2]/button
+                var Visibility=BrowserDriver.FindElement(By.XPath("//div[@id='athlete-profile']/div/div/div/div/div/div/button"));
+                if ("Request to Follow"==Visibility.Text || "Folge-Anfrage"==Visibility.Text)
+                {
+                    throw new PrivateAthleteException(AthleteId);
+                }
+                else // if ("Follow"==Visibility.Text)
+                {
+                    // Athlete is public but has no activities.
+                    throw new NoFirstDateFoundException(AthleteId, $"no activities found for {AthleteId} visibility: {Visibility.Text}");
+                }
+            }
+            
             // locate dates in the pulldown menu
-            var Elts=BrowserDriver.FindElements(By.XPath("//div[@id='interval-graph']/div/div/ul/li/a"));
             int MinDateInt = int.MaxValue;
             String MinDateString="";
             // parse all entries
