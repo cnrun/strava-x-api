@@ -31,6 +31,11 @@ namespace Prototype.Tools
                             WriteQueriesForAthlete(stravaXApi, db, Athlete.AthleteId);
                             Console.WriteLine($"Athlete:{Athlete} run since:{ts.TotalSeconds}s");
                         }
+                        catch(PrivateAthleteException e)
+                        {
+                            // TODO AB#27 athlete should be marked as private to avoid second visit.
+                            Console.WriteLine($"SKIP: private athlete {Athlete.AthleteId} {e.ToString()}");  
+                        }
                         catch(Exception e)
                         {
                             Console.WriteLine($"SKIP:{Athlete.AthleteId} {e.ToString()}");  
@@ -70,8 +75,10 @@ namespace Prototype.Tools
             // If we already have an entry, we assume that the entry contains the first activity date, as it is expensive to retrieve its value with Selenium.
             if (queriesForPatient.Count==0)
             {
-                // Retrieve the first activity date with selenium
+                // Retrieve the first activity date with selenium.
+                // may throw PrivateAthleteException.
                 DateTime FirstActivityDate = stravaXApi.getActivityRange(AthleteId);
+                
                 System.Console.WriteLine($"First activity at {FirstActivityDate.Year}/{FirstActivityDate.Month}");                    
                 FromYear=FirstActivityDate.Year;
                 FromMonth=FirstActivityDate.Month;
