@@ -34,7 +34,20 @@ namespace Prototype.Tools
                         catch(PrivateAthleteException e)
                         {
                             // TODO AB#27 athlete should be marked as private to avoid second visit.
-                            Console.WriteLine($"SKIP: private athlete {Athlete.AthleteId} {e.ToString()}");  
+                            // create a dummy Query to prevent next search
+                            ActivityRangeQuery arq = new ActivityRangeQuery();
+                            arq.AthleteId=Athlete.AthleteId;
+                            arq.DateFrom=new DateTime(2019,12,01);
+                            arq.DateTo=new DateTime(2019,12,31);
+                            arq.Status=QueryStatus.Done;
+                            arq.Message=$"private athlete {Athlete.AthleteId}";
+                            arq.StatusChanged=DateTime.Now;
+                            db.ActivityQueriesDB.Add(arq);
+                            Console.WriteLine($"SKIP: private athlete {Athlete.AthleteId} {e.Message}");  
+                        }
+                        catch(TooManyStravaRequestException e)
+                        {
+                            Console.WriteLine($"Too Many Queries detected {e.Message} need to wait some hours");                            
                         }
                         catch(Exception e)
                         {
@@ -81,11 +94,11 @@ namespace Prototype.Tools
 
                 // be sure of a one seconde intervall between to requests
                 int dt=DateTime.Now.Millisecond-lastStravaHttpRequest.Millisecond;
-                if (dt<1500)
+                if (dt<3000)
                 {
                     System.Threading.Tasks.Task.Delay(dt).Wait();
                 }
-                
+
                 DateTime FirstActivityDate = stravaXApi.getActivityRange(AthleteId);
                 lastStravaHttpRequest=DateTime.Now;
                 

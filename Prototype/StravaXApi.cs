@@ -294,6 +294,7 @@ namespace Prototype
             }
             catch(WebDriverException)
             {
+                // Or may try one more time (cause Timeout), but first check if it's a private profile.
                 Elts=null;
             }
             if (Elts==null || Elts.Count==0)
@@ -312,15 +313,25 @@ namespace Prototype
                 }
                 // we may not have access to none-public profiles.
                 // //*[@id="athlete-profile"]/div[2]/div[1]/div[1]/div/div[1]/div[2]/button
-                var Visibility=BrowserDriver.FindElement(By.XPath("//div[@id='athlete-profile']/div/div/div/div/div/div/button"));
-                if ("Request to Follow"==Visibility.Text || "Folge-Anfrage"==Visibility.Text)
+                try
                 {
-                    throw new PrivateAthleteException(AthleteId);
+                    //*[@id="athlete-profile"]/div[1]/div[2]/div[1]/div[3]/button
+                    var Visibility=BrowserDriver.FindElement(By.XPath("//div[@class='follow-action']/button"));
+                    if ("Request to Follow"==Visibility.Text || "Folge-Anfrage"==Visibility.Text)
+                    {
+                        throw new PrivateAthleteException(AthleteId);
+                    }
+                    else // if ("Follow"==Visibility.Text)
+                    {
+                        // Athlete is public but has no activities.
+                        // Or may try one more time
+                        throw new NoFirstDateFoundException(AthleteId, $"no activities found for {AthleteId} visibility: {Visibility.Text}");
+                    }
                 }
-                else // if ("Follow"==Visibility.Text)
+                catch(WebDriverException)
                 {
-                    // Athlete is public but has no activities.
-                    throw new NoFirstDateFoundException(AthleteId, $"no activities found for {AthleteId} visibility: {Visibility.Text}");
+                    // Or may try one more time
+                    throw new NoFirstDateFoundException(AthleteId, $"no activities found for {AthleteId} visibility: UNKNOWN");
                 }
             }
             
