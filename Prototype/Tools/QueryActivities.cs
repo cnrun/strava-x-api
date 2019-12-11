@@ -119,6 +119,7 @@ namespace Prototype.Tools
                         continue;
                     }
                     var ActivitiesList = stravaXApi.getActivities(arq.AthleteId,$"{arq.DateFrom.Year:D4}",$"{arq.DateFrom.Month:D2}");
+                    int EnterredActivityCount=0;
                     foreach(ActivityShort ActivityShort in ActivitiesList)
                     {
                         // Console.WriteLine($"JSON={ActivityShort.SerializePrettyPrint(ActivityShort)}");
@@ -126,21 +127,23 @@ namespace Prototype.Tools
                         {
                             db.ActivityShortDB.Add(ActivityShort);
                             try{
+                                // do it better after foreach, but first check how it works with the concurrentcy exception
                                 db.SaveChanges();
-                                Console.WriteLine($"Enterred Activities: {db.ActivityShortDB.OrderBy(b => b.ActivityId).Count()}");
+                                EnterredActivityCount++;
                             }
                             catch(DbUpdateConcurrencyException)
                             {
                                 // Just skip this entry if some conflict exists.
-                                Console.WriteLine($"skip conflicted activity {ActivityShort}");
+                                Console.WriteLine($"❌ skip conflicted activity {ActivityShort}");
                                 continue;
                             }
                         }
                         else
                         {
-                            Console.WriteLine($"{ActivityShort.ActivityId} allready in database");
+                            Console.WriteLine($"❌ {ActivityShort.ActivityId} allready in database");
                         }
                     }
+                    Console.WriteLine($"enterred activity count: {EnterredActivityCount}/{db.ActivityShortDB.Count()} for {arq.AthleteId} at {arq.DateFrom.Year:D4}/{arq.DateFrom.Month:D2}");
                     arq.Status=QueryStatus.Done;
                     arq.StatusChanged=DateTime.Now;
                     // should not have to save anything.
@@ -161,8 +164,7 @@ namespace Prototype.Tools
                         throw e;
                     }
                 }
-                Console.WriteLine($"Activities total stored = {db.ActivityShortDB.Count()}");
-                Console.WriteLine($"Request total stored = {db.ActivityQueriesDB.Count(a => a.Status==QueryStatus.Created)}");
+                Console.WriteLine($"activities stored = {db.ActivityShortDB.Count()} / created:{db.ActivityQueriesDB.Count(a => a.Status==QueryStatus.Created)}");
                 Count++;
                 // Exist when KeepRunning is false (from the debugger),
                 // or the file 'QueryActivities.quit' exists.
