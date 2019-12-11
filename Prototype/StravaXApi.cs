@@ -145,9 +145,10 @@ namespace Prototype
                 builder
                     .AddFilter("Microsoft", Microsoft.Extensions.Logging.LogLevel.Warning)
                     .AddFilter("System", Microsoft.Extensions.Logging.LogLevel.Warning)
-                    .AddFilter("Prototype.StravaXApi", Microsoft.Extensions.Logging.LogLevel.Debug)
-                    .AddFilter("StravaXApi", Microsoft.Extensions.Logging.LogLevel.Debug)
-                    .AddConsole();
+                    .AddFilter("Prototype.StravaXApi", Microsoft.Extensions.Logging.LogLevel.Information)
+                    .AddFilter("StravaXApi", Microsoft.Extensions.Logging.LogLevel.Information)
+                    .AddProvider(new Prototype.Tools.CustomLoggerProvider()); // Color and Multi-Line output are not optimal for cloud container logs.
+                    //.AddConsole();
                     //.AddEventLog();
             });
             logger = loggerFactory.CreateLogger<StravaXApi>();
@@ -284,7 +285,6 @@ namespace Prototype
 
             BrowserDriver.Navigate().GoToUrl(url);            
             logger.LogInformation($"open {url}");
-            logger.LogDebug($"open {url}");
 
             ICollection<IWebElement> Elts;
             try
