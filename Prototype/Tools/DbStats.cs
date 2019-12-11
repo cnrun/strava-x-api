@@ -145,9 +145,24 @@ namespace Prototype.Tools
                     }
 
                     {
+                        // retrieve queries type for athlete
+                        string aId="18911244";
+                        var qsList = db.ActivityQueriesDB.Where(a => a.AthleteId==aId).Select(aId=>aId.Status).Distinct().ToList();
+                        logger.LogInformation($" athl {aId}");
+                        foreach(QueryStatus qs in qsList)
+                        {
+                            logger.LogInformation($" query {qs} count {db.ActivityQueriesDB.Where(a => a.AthleteId==aId && a.Status==qs).Count()}");
+                        }
+
+                        IList<ActivityRangeQuery> q0 = db.ActivityQueriesDB.Where(a => a.AthleteId==aId && a.Status==QueryStatus.Created).OrderByDescending(a => a.DateFrom).Take(6).ToList();
+                        
+
+                    }
+                    /*
+                    {
+                        // opened queries with activities
                         int i=0;
                         int nbAthletes=db.AthleteShortDB.Count();
-                        // opened queries with activities
                         foreach(AthleteShort athlete in db.AthleteShortDB)
                         {
                             i++;
@@ -170,6 +185,7 @@ namespace Prototype.Tools
                             }
                         }
                     }
+                    */
                     /*
                     // output activity count for activity type
                     logger.LogInformation($"Activity types Σ :{db.ActivityShortDB.Count()}");

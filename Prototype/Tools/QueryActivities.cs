@@ -184,7 +184,7 @@ namespace Prototype.Tools
         static int queryAthlete(string aid, string clientId, StravaXApi stravaXApi, StravaXApiContext db)
         {
             int ret = 0;
-            IList<ActivityRangeQuery> q0 = db.ActivityQueriesDB.Where(a => a.AthleteId==aid && a.Status==QueryStatus.Created).OrderByDescending(a => a.DateFrom).Take(50).ToList();
+            IList<ActivityRangeQuery> q0 = db.ActivityQueriesDB.Where(a => a.AthleteId==aid && a.Status==QueryStatus.Created).OrderByDescending(a => a.DateFrom).Take(12).ToList();
             while(q0.Count>0 && ret==0)
             {
                 // Mark all queries with "RESERVED"
@@ -229,6 +229,8 @@ namespace Prototype.Tools
                     }
                     db.SaveChanges();
                 }
+                // retrieve next queries for max one year.
+                q0 = db.ActivityQueriesDB.Where(a => a.AthleteId==aid && a.Status==QueryStatus.Created).OrderByDescending(a => a.DateFrom).Take(12).ToList();
             }
             return ret;
         }
