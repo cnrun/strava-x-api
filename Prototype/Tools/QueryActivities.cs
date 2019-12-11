@@ -9,6 +9,10 @@ using System.Diagnostics;
 
 namespace Prototype.Tools
 {    
+    class CancelExcecution:Exception
+    {
+        public CancelExcecution(string msg):base(msg) {}
+    }
     public class QueryActivities
     {
         static private int Count=0;
@@ -50,38 +54,44 @@ namespace Prototype.Tools
                     Stopwatch stopWatch = new Stopwatch();
                     stopWatch.Start();
                     ret=0;
-                    while(AthleteIdList.Count>0 && ret==0)
+                    try {
+                        while(AthleteIdList.Count>0 && ret==0)
+                        {
+                            string aid =AthleteIdList.ElementAt(new Random().Next(AthleteIdList.Count));
+                            Console.WriteLine($"retrieve activity for athlete {aid}");
+
+                            // https://docs.microsoft.com/en-us/ef/ef6/querying/
+                            // First retrieve all query objects to avoid "New transaction is not allowed because there are other threads running in the session."
+                            // Not best praxis but enought for Prototype.
+                            // https://stackoverflow.com/a/2656612/281188
+                            // IList<ActivityRangeQuery> queries = db.ActivityQueriesDB.Where(a => a.Status==QueryStatus.Created).OrderByDescending(a => a.DateFrom).Take(50).ToList();
+                            ret = queryAthlete(aid, clientId, stravaXApi, db);
+
+                            TimeSpan ts = stopWatch.Elapsed;
+                            if (TimerSeconds>0 && ts.TotalSeconds>TimerSeconds)
+                            {
+                                Console.WriteLine($"Timer reached after {ts.ToString()} now exit with {TimerExitCode}.");
+                                // exit with error code, container should restart
+                                ret = TimerExitCode;
+                                break;
+                            }
+                            Boolean KeepRunning=true;
+                            if (!KeepRunning || File.Exists("QueryActivities.quit"))
+                            {
+                                Console.WriteLine($"break {KeepRunning} {Count}");
+                                // regular exit, container should ended.
+                                ret = 0;
+                                break;
+                            }
+                            // search for a new athlete.
+                            qAthleteCreated = db.ActivityQueriesDB.Where(a => a.Status==QueryStatus.Created).Select(a => a.AthleteId).Distinct();    
+                            qAthleteReserved = db.ActivityQueriesDB.Where(a => a.Status!=QueryStatus.Reserved).Select(a => a.AthleteId).Distinct();    
+                            AthleteIdList = qAthleteCreated.Intersect(qAthleteReserved).Take(100).ToList();
+                        }
+                    }
+                    catch(CancelExcecution e)
                     {
-                        string aid =AthleteIdList.ElementAt(new Random().Next(AthleteIdList.Count));
-                        Console.WriteLine($"retrieve activity for athlete {aid}");
-
-                        // https://docs.microsoft.com/en-us/ef/ef6/querying/
-                        // First retrieve all query objects to avoid "New transaction is not allowed because there are other threads running in the session."
-                        // Not best praxis but enought for Prototype.
-                        // https://stackoverflow.com/a/2656612/281188
-                        // IList<ActivityRangeQuery> queries = db.ActivityQueriesDB.Where(a => a.Status==QueryStatus.Created).OrderByDescending(a => a.DateFrom).Take(50).ToList();
-                        ret = queryAthlete(aid, clientId, stravaXApi, db);
-
-                        TimeSpan ts = stopWatch.Elapsed;
-                        if (TimerSeconds>0 && ts.TotalSeconds>TimerSeconds)
-                        {
-                            Console.WriteLine($"Timer reached after {ts.ToString()} now exit with {TimerExitCode}.");
-                            // exit with error code, container should restart
-                            ret = TimerExitCode;
-                            break;
-                        }
-                        Boolean KeepRunning=true;
-                        if (!KeepRunning || File.Exists("QueryActivities.quit"))
-                        {
-                            Console.WriteLine($"break {KeepRunning} {Count}");
-                            // regular exit, container should ended.
-                            ret = 0;
-                            break;
-                        }
-                        // search for a new athlete.
-                        qAthleteCreated = db.ActivityQueriesDB.Where(a => a.Status==QueryStatus.Created).Select(a => a.AthleteId).Distinct();    
-                        qAthleteReserved = db.ActivityQueriesDB.Where(a => a.Status!=QueryStatus.Reserved).Select(a => a.AthleteId).Distinct();    
-                        AthleteIdList = qAthleteCreated.Intersect(qAthleteReserved).Take(100).ToList();
+                        Console.WriteLine($"Execution has been canceled: {e.Message}");
                     }
                 }
             }
@@ -158,14 +168,14 @@ namespace Prototype.Tools
                 // or the file 'QueryActivities.quit' exists.
                 //   *Program will exit with "touch QueryActivities.quit" in /app directory in container.
 
-                // It's better to break the programm after the whole athlete has been retrieved. Please do not break here.
                 Boolean KeepRunning=true;
                 if (!KeepRunning || File.Exists("QueryActivities.quit.immediatly"))
                 {
                     Console.WriteLine($"break {KeepRunning} {Count}");
                     // regular exit, container should ended.
-                    ret = 0;
-                    break;
+                    throw new CancelExcecution("break {KeepRunning} {Count}");
+                    // ret = 0;
+                    // break;
                 }
             }
             return ret;
@@ -200,6 +210,12 @@ namespace Prototype.Tools
                 try
                 {
                     ret = queryRange(stravaXApi, db, queries);                
+                }
+                catch(CancelExcecution e)
+                {
+                    // just to clarify that it may happend.
+                    // finally will also call in that case.
+                    throw e;
                 }
                 finally
                 {
