@@ -114,22 +114,24 @@ namespace Prototype.Tools
                         logger.LogInformation($"{qAthleteCreated.Count()} without {QueryStatus.Reserved} queries");
                         logger.LogInformation($"{qAthleteCreated.Intersect(qAthleteReserved).Count()} with {QueryStatus.Created} and without {QueryStatus.Reserved} queries");
                         List<string> AthleteIdList = qAthleteCreated.Intersect(qAthleteReserved).Take(10).ToList();
-                        logger.LogInformation("10 athletes from this list:");
+                        logger.LogInformation($"{AthleteIdList.Count()} athletes from this list:");
                         foreach(string aId in AthleteIdList)
                         {
                             logger.LogInformation($" AthleteId={aId}");
                         }
-                        // retrieve one random athlete
-                        string aid =AthleteIdList.ElementAt(new Random().Next(AthleteIdList.Count));
-                        aid="2788840";
-                        logger.LogInformation($"retrieve activity for athlete {aid}");
-                        // 5 first queries for this athlete
-                        IList<ActivityRangeQuery> q0 = db.ActivityQueriesDB.Where(a => a.AthleteId==aid && a.Status==QueryStatus.Created).OrderByDescending(a => a.DateFrom).Take(10).ToList();
-                        foreach(ActivityRangeQuery arq in q0)
+                        if (AthleteIdList.Count()>0)
                         {
-                            logger.LogInformation($" query={arq}");
-                            var ActivitiesInRange = db.ActivityShortDB.Where(a=>a.AthleteId==arq.AthleteId && ((a.ActivityDate>=arq.DateFrom)&&(a.ActivityDate<=arq.DateTo)));
-                            logger.LogInformation($"     find {ActivitiesInRange.Count()} activities in it.");
+                            // retrieve one random athlete
+                            string aid =AthleteIdList.ElementAt(new Random().Next(AthleteIdList.Count));
+                            logger.LogInformation($"retrieve activity for athlete {aid}");
+                            // 5 first queries for this athlete
+                            IList<ActivityRangeQuery> q0 = db.ActivityQueriesDB.Where(a => a.AthleteId==aid && a.Status==QueryStatus.Created).OrderByDescending(a => a.DateFrom).Take(10).ToList();
+                            foreach(ActivityRangeQuery arq in q0)
+                            {
+                                logger.LogInformation($" query={arq}");
+                                var ActivitiesInRange = db.ActivityShortDB.Where(a=>a.AthleteId==arq.AthleteId && ((a.ActivityDate>=arq.DateFrom)&&(a.ActivityDate<=arq.DateTo)));
+                                logger.LogInformation($"     find {ActivitiesInRange.Count()} activities in it.");
+                            }
                         }
                     }
 
