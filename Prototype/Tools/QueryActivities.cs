@@ -8,7 +8,7 @@ using NDesk.Options;
 using System.Diagnostics;
 
 namespace Prototype.Tools
-{    
+{
     class CancelExcecution:Exception
     {
         public CancelExcecution(string msg):base(msg) {}
@@ -40,10 +40,10 @@ namespace Prototype.Tools
                 // select distinct AthleteId from [dbo].[ActivityQueriesDB] where Status=2
                 // intersect
                 // select distinct AthleteId from [dbo].[ActivityQueriesDB] where (Status<>0 AND Status<>3)
-                var qAthleteCreated = db.ActivityQueriesDB.Where(a => a.Status==QueryStatus.Created).Select(a => a.AthleteId).Distinct();    
-                var qAthleteReserved = db.ActivityQueriesDB.Where(a => a.Status!=QueryStatus.Reserved).Select(a => a.AthleteId).Distinct();    
+                var qAthleteCreated = db.ActivityQueriesDB.Where(a => a.Status==QueryStatus.Created).Select(a => a.AthleteId).Distinct();
+                var qAthleteReserved = db.ActivityQueriesDB.Where(a => a.Status!=QueryStatus.Reserved).Select(a => a.AthleteId).Distinct();
                 List<string> AthleteIdList = qAthleteCreated.Intersect(qAthleteReserved).Take(100).ToList();
-                
+
                 if (AthleteIdList.Count==0)
                 {
                     Console.WriteLine($"no more athlete to search for. created:{qAthleteCreated.Count()} reserved:{qAthleteReserved.Count()}");
@@ -84,8 +84,8 @@ namespace Prototype.Tools
                                 break;
                             }
                             // search for a new athlete.
-                            qAthleteCreated = db.ActivityQueriesDB.Where(a => a.Status==QueryStatus.Created).Select(a => a.AthleteId).Distinct();    
-                            qAthleteReserved = db.ActivityQueriesDB.Where(a => a.Status!=QueryStatus.Reserved).Select(a => a.AthleteId).Distinct();    
+                            qAthleteCreated = db.ActivityQueriesDB.Where(a => a.Status==QueryStatus.Created).Select(a => a.AthleteId).Distinct();
+                            qAthleteReserved = db.ActivityQueriesDB.Where(a => a.Status!=QueryStatus.Reserved).Select(a => a.AthleteId).Distinct();
                             AthleteIdList = qAthleteCreated.Intersect(qAthleteReserved).Take(100).ToList();
                         }
                     }
@@ -143,11 +143,11 @@ namespace Prototype.Tools
                             Console.WriteLine($"❌ {ActivityShort.ActivityId} allready in database");
                         }
                     }
-                    Console.WriteLine($"enterred activity count: {EnterredActivityCount}/{db.ActivityShortDB.Count()} for {arq.AthleteId} at {arq.DateFrom.Year:D4}/{arq.DateFrom.Month:D2}");
                     arq.Status=QueryStatus.Done;
                     arq.StatusChanged=DateTime.Now;
                     // should not have to save anything.
                     db.SaveChanges();
+                    Console.WriteLine($"enterred activity count: {EnterredActivityCount}/{db.ActivityShortDB.Count()} for {arq.AthleteId} at {arq.DateFrom.Year:D4}/{arq.DateFrom.Month:D2}");
                     ErrorCountConsecutive=0;
                 }
                 catch(Exception e)
@@ -164,7 +164,7 @@ namespace Prototype.Tools
                         throw e;
                     }
                 }
-                Console.WriteLine($"activities stored = {db.ActivityShortDB.Count()} / created:{db.ActivityQueriesDB.Count(a => a.Status==QueryStatus.Created)}");
+                Console.WriteLine($"activities stored:{db.ActivityShortDB.Count()}/{QueryStatus.Created}:{db.ActivityQueriesDB.Count(a => a.Status==QueryStatus.Created)}/{QueryStatus.Reserved}:{db.ActivityQueriesDB.Count(a => a.Status==QueryStatus.Reserved)}");
                 Count++;
                 // Exist when KeepRunning is false (from the debugger),
                 // or the file 'QueryActivities.quit' exists.
@@ -195,7 +195,7 @@ namespace Prototype.Tools
                 {
                     try
                     {
-                        arq.Status=QueryStatus.Reserved;                    
+                        arq.Status=QueryStatus.Reserved;
                         arq.StatusChanged=DateTime.Now;
                         arq.Message=$"Reserved by {clientId}";
                         queries.Add(arq);
@@ -211,7 +211,7 @@ namespace Prototype.Tools
                 // Run for all reserved queries
                 try
                 {
-                    ret = queryRange(stravaXApi, db, queries);                
+                    ret = queryRange(stravaXApi, db, queries);
                 }
                 catch(CancelExcecution e)
                 {
