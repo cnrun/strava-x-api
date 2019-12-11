@@ -146,17 +146,23 @@ namespace Prototype.Tools
 
                     {
                         // retrieve queries type for athlete
-                        string aId="18911244";
+                        string aId="2754335";
                         var qsList = db.ActivityQueriesDB.Where(a => a.AthleteId==aId).Select(aId=>aId.Status).Distinct().ToList();
                         logger.LogInformation($" athl {aId}");
                         foreach(QueryStatus qs in qsList)
                         {
                             logger.LogInformation($" query {qs} count {db.ActivityQueriesDB.Where(a => a.AthleteId==aId && a.Status==qs).Count()}");
                         }
-
-                        IList<ActivityRangeQuery> q0 = db.ActivityQueriesDB.Where(a => a.AthleteId==aId && a.Status==QueryStatus.Created).OrderByDescending(a => a.DateFrom).Take(6).ToList();
-                        
-
+                        // IList<ActivityRangeQuery> q0 = db.ActivityQueriesDB.Where(a => a.AthleteId==aId && a.Status==QueryStatus.Created).OrderByDescending(a => a.DateFrom).Take(6).ToList();
+                    }
+                    {
+                        string aId="26319532";
+                        var qsList = db.ActivityQueriesDB.Where(a => a.AthleteId==aId).Select(aId=>aId.Status).Distinct().ToList();
+                        logger.LogInformation($" athl {aId}");
+                        foreach(QueryStatus qs in qsList)
+                        {
+                            logger.LogInformation($" query {qs} count {db.ActivityQueriesDB.Where(a => a.AthleteId==aId && a.Status==qs).Count()}");
+                        }
                     }
                     /*
                     {
