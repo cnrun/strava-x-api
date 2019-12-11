@@ -197,7 +197,22 @@ namespace Prototype.Tools
                 }
                 db.SaveChanges();
                 // Run for all reserved queries
-                ret = queryRange(stravaXApi, db, queries);                
+                try
+                {
+                    ret = queryRange(stravaXApi, db, queries);                
+                }
+                finally
+                {
+                    // integrity check, status should not be Reserved anymore
+                    foreach(ActivityRangeQuery arq in q0)
+                    {
+                        if (arq.Status==QueryStatus.Reserved)
+                        {
+                            Console.WriteLine($"WARN: remove reservation on {arq}");
+                        }
+                    }
+                    db.SaveChanges();
+                }
             }
             return ret;
         }
