@@ -69,11 +69,12 @@ namespace Prototype.Tools
             }
             return ret;
         }
+        private static DateTime lastStravaHttpRequest=DateTime.Now;
 
         static void WriteQueriesForAthlete(StravaXApi stravaXApi, StravaXApiContext db, string AthleteId)
         {
             DateTime Now = DateTime.Now;
-
+            lastStravaHttpRequest=DateTime.Now;
             int ToYear=Now.Year;
             int ToMonth=Now.Month;
             //
@@ -81,20 +82,19 @@ namespace Prototype.Tools
             //
 
             // Retrieve all entered queries or the wanted athlete.
-            List<ActivityRangeQuery> queriesForPatient = db.ActivityQueriesDB.Where(a => a.AthleteId==AthleteId).OrderBy(a => a.DateFrom).ToList();
+            List<ActivityRangeQuery> queriesForAthlete = db.ActivityQueriesDB.Where(a => a.AthleteId==AthleteId).OrderBy(a => a.DateFrom).ToList();
             int FromYear;
             int FromMonth;
 
             // If we already have an entry, we assume that the entry contains the first activity date, as it is expensive to retrieve its value with Selenium.
-            DateTime lastStravaHttpRequest=DateTime.Now;
-            if (queriesForPatient.Count==0)
+            if (queriesForAthlete.Count==0)
             {
                 // Retrieve the first activity date with selenium.
                 // may throw PrivateAthleteException.
 
                 // be sure of a one seconde intervall between to requests
                 int dt=DateTime.Now.Millisecond-lastStravaHttpRequest.Millisecond;
-                if (dt<3000)
+                if (dt<2000)
                 {
                     System.Threading.Tasks.Task.Delay(dt).Wait();
                 }
@@ -109,17 +109,17 @@ namespace Prototype.Tools
             else
             {
                 // retrieve first and last date
-                DateTime minDT = queriesForPatient.First().DateFrom;
+                DateTime minDT = queriesForAthlete.First().DateFrom;
                 // DateTime maxDT = queriesForPatient.Last().DateFrom;
                 FromYear=minDT.Year;
                 FromMonth=minDT.Month;
             }
-            Console.WriteLine($"queries enterred:{queriesForPatient.Count}/total:{db.ActivityQueriesDB.Count()}");
+            Console.WriteLine($"queries enterred:{queriesForAthlete.Count}/total:{db.ActivityQueriesDB.Count()}");
             if (FromYear==ToYear)
             {
                 for(int month=FromMonth;month<=ToMonth;month++)
                 {
-                    AddQuery(db, AthleteId, new DateTime(FromYear,month,1), new DateTime(FromYear,month,1).AddMonths(1).AddDays(-1), queriesForPatient);
+                    AddQuery(db, AthleteId, new DateTime(FromYear,month,1), new DateTime(FromYear,month,1).AddMonths(1).AddDays(-1), queriesForAthlete);
                 }
             }
             else
@@ -127,21 +127,21 @@ namespace Prototype.Tools
                 // first year
                 for(int month=FromMonth;month<=12;month++)
                 {
-                    AddQuery(db, AthleteId, new DateTime(FromYear,month,1), new DateTime(FromYear,month,1).AddMonths(1).AddDays(-1), queriesForPatient);
+                    AddQuery(db, AthleteId, new DateTime(FromYear,month,1), new DateTime(FromYear,month,1).AddMonths(1).AddDays(-1), queriesForAthlete);
                 }
                 // all years after
                 for(int year=FromYear+1;year<=ToYear-1;year++)
                 {
                     for(int month=01;month<=12;month++)
                     {
-                        AddQuery(db, AthleteId, new DateTime(year,month,1), new DateTime(year,month,1).AddMonths(1).AddDays(-1), queriesForPatient);
+                        AddQuery(db, AthleteId, new DateTime(year,month,1), new DateTime(year,month,1).AddMonths(1).AddDays(-1), queriesForAthlete);
                     }
                 }
                 // last year
                 for(int month=01;month<=ToMonth;month++)
                 {
                     // from first day of month to last day of the month
-                    AddQuery(db, AthleteId, new DateTime(ToYear,month,1), new DateTime(ToYear,month,1).AddMonths(1).AddDays(-1), queriesForPatient);
+                    AddQuery(db, AthleteId, new DateTime(ToYear,month,1), new DateTime(ToYear,month,1).AddMonths(1).AddDays(-1), queriesForAthlete);
                 }
             }
 
