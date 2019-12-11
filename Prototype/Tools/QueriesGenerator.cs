@@ -73,11 +73,21 @@ namespace Prototype.Tools
             int FromMonth;
 
             // If we already have an entry, we assume that the entry contains the first activity date, as it is expensive to retrieve its value with Selenium.
+            DateTime lastStravaHttpRequest=DateTime.Now;
             if (queriesForPatient.Count==0)
             {
                 // Retrieve the first activity date with selenium.
                 // may throw PrivateAthleteException.
+
+                // be sure of a one seconde intervall between to requests
+                int dt=DateTime.Now.Millisecond-lastStravaHttpRequest.Millisecond;
+                if (dt<1500)
+                {
+                    System.Threading.Tasks.Task.Delay(dt).Wait();
+                }
+                
                 DateTime FirstActivityDate = stravaXApi.getActivityRange(AthleteId);
+                lastStravaHttpRequest=DateTime.Now;
                 
                 System.Console.WriteLine($"First activity at {FirstActivityDate.Year}/{FirstActivityDate.Month}");                    
                 FromYear=FirstActivityDate.Year;
