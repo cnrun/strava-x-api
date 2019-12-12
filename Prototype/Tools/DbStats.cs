@@ -26,8 +26,16 @@ namespace Prototype.Tools
             logger.LogDebug("Log Stats");
 
             bool doGarbage=false;
+            bool doAll=false;
+            bool doListimages=false;
+            string AthleteId=null;
+            bool doAthleteStats=false;
             var p = new OptionSet () {
                 { "g|garbage",   v => { doGarbage=true; } },
+                { "a|all",   v => { doAll=true; } },
+                { "l|listimages",   v => { doListimages=true; } },
+                { "aid|athleteid=",   v => { AthleteId=v; } },
+                { "as|athlete-stats",   v => { doAthleteStats=true; } },
             };
             p.Parse(args);
 
@@ -65,12 +73,15 @@ namespace Prototype.Tools
                     */
 
 
-                    // output status count for queries
-                    var status = db.ActivityQueriesDB.Select(a => a.Status).Distinct();
-                    logger.LogInformation($"Queries:");
-                    foreach(var st in status)
+                    if (doAll)
                     {
-                        logger.LogInformation($" {st} {db.ActivityQueriesDB.Count(a => a.Status==st)}");
+                        // output status count for queries
+                        var status = db.ActivityQueriesDB.Select(a => a.Status).Distinct();
+                        logger.LogInformation($"Queries:");
+                        foreach(var st in status)
+                        {
+                            logger.LogInformation($" {st} {db.ActivityQueriesDB.Count(a => a.Status==st)}");
+                        }
                     }
 
                     if (doGarbage)
@@ -106,6 +117,7 @@ namespace Prototype.Tools
                         }
                     }
 
+                    if (doAll)
                     {
                         // Find out athlete with open queries:
                         var qAthleteCreated = db.ActivityQueriesDB.Where(a => a.Status==QueryStatus.Created).Select(a => a.AthleteId).Distinct();    
@@ -135,6 +147,7 @@ namespace Prototype.Tools
                         }
                     }
 
+                    if (doAll)
                     {
                         // find activities in a QueryRange
                         foreach(ActivityRangeQuery arq in db.ActivityQueriesDB.Where(a => a.Status==QueryStatus.Done).OrderByDescending(a=>a.DateFrom).Take(10))
@@ -144,6 +157,7 @@ namespace Prototype.Tools
                         }
                     }
 
+                    if (doAll)
                     {
                         // retrieve queries type for athlete
                         string aId="2754335";
@@ -155,6 +169,7 @@ namespace Prototype.Tools
                         }
                         // IList<ActivityRangeQuery> q0 = db.ActivityQueriesDB.Where(a => a.AthleteId==aId && a.Status==QueryStatus.Created).OrderByDescending(a => a.DateFrom).Take(6).ToList();
                     }
+                    if (doAll)
                     {
                         string aId="26319532";
                         var qsList = db.ActivityQueriesDB.Where(a => a.AthleteId==aId).Select(aId=>aId.Status).Distinct().ToList();
@@ -163,6 +178,36 @@ namespace Prototype.Tools
                         {
                             logger.LogInformation($" query {qs} count {db.ActivityQueriesDB.Where(a => a.AthleteId==aId && a.Status==qs).Count()}");
                         }
+                    }
+                    if (doAll || doListimages)
+                    {
+                        List<ActivityShort> activitiesWithImages = db.ActivityShortDB.Where(a => a.ActivityImagesListAsString.Length>0 && a.ActivityType==ActivityType.BackcountrySki).ToList();
+                        logger.LogInformation($" activity count:{activitiesWithImages.Count()}");
+                        int imageCount=0;
+                        foreach(ActivityShort activity in activitiesWithImages)
+                        {
+                            List<string> images = activity.ActivityImagesList;
+                            imageCount+=images.Count();
+                            logger.LogInformation($"activity {activity.ActivityTitle}");
+                            foreach(string imageUrl in images)
+                            {
+                               logger.LogInformation($" url:{imageUrl}");
+                            }
+                        }
+                        logger.LogInformation($" images {imageCount}");
+                    }
+
+                    if (doAll || doAthleteStats)
+                    {
+                        IList<AthleteShort> AllAthletes = db.AthleteShortDB.ToList();
+                        logger.LogInformation($" athletes {AllAthletes.Count()}");
+                        logger.LogInformation($" first: [{AllAthletes.First()}] last: [{AllAthletes.Last()}]");
+                        int AthleteCount = db.ActivityQueriesDB.Select(a=>a.AthleteId).Distinct().Count();
+                        logger.LogInformation($"athletes in queries {AthleteCount}");
+                        int PrivateAthleteCount = db.ActivityQueriesDB.Where(a => a.Status==QueryStatus.Done && a.Message.Contains("private")).Select(a=>a.AthleteId).Distinct().Count();
+                        logger.LogInformation($"  private {PrivateAthleteCount}");
+                        int CreatedAthleteCount = db.ActivityQueriesDB.Where(a => a.Status==QueryStatus.Created).Select(a=>a.AthleteId).Distinct().Count();
+                        logger.LogInformation($"  {QueryStatus.Created} {CreatedAthleteCount}");
                     }
                     /*
                     {
