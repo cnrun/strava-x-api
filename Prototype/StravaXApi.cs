@@ -481,14 +481,18 @@ namespace Prototype
             wait.Until(driver1 => ((IJavaScriptExecutor)BrowserDriver).ExecuteScript("return document.readyState").Equals("complete"));
             Thread.Sleep(3000);
 
-            if (!Directory.Exists("./screenshots"))
-            {
-                DirectoryInfo DirInfo = Directory.CreateDirectory("./screenshots");
-                logger.LogInformation($"directory for screenshots created at {DirInfo.FullName}");
-            }
             if (ScreenshotsMonthActivities)
             {
-                ((ITakesScreenshot)BrowserDriver).GetScreenshot().SaveAsFile($"./screenshots/{AthleteId}_{Year}_{Month}.png");
+                if (!Directory.Exists("./screenshots"))
+                {
+                    DirectoryInfo DirInfo = Directory.CreateDirectory("./screenshots");
+                    logger.LogInformation($"directory for screenshots created at {DirInfo.FullName}");
+                }
+                if (!Directory.Exists($"./screenshots/{AthleteId}"))
+                {
+                    DirectoryInfo DirInfo = Directory.CreateDirectory($"./screenshots/{AthleteId}");
+                }
+                ((ITakesScreenshot)BrowserDriver).GetScreenshot().SaveAsFile($"./screenshots/{AthleteId}/{AthleteId}_{Year}_{Month}.png");
             }
 
             // Find all activity icons in thos page
