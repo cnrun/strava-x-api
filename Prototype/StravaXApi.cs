@@ -264,8 +264,9 @@ namespace Prototype
                 }
                 catch(WebDriverException)
                 {
-                    // Everything OK, Strava is not in await mode.
+                    // Everything 'OK', Strava is not in await mode.
                 }
+                logger.LogError($"Can't login in Strava with user {Username}. Please check if the login page appears at {url}.");
                 throw e;
             }
         }
