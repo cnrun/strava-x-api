@@ -12,7 +12,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="3.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.0.0" />
     <PackageReference Include="NDesk.Options.Core" Version="1.2.5" />
-    <PackageReference Include="Selenium.WebDriver.ChromeDriver" Version="78.0.3904.7000" />
+    <PackageReference Include="Selenium.WebDriver.ChromeDriver" Version="79.0.3945.3600" />
     <PackageReference Include="Selenium.Support" Version="3.141.0" />
     <PackageReference Include="DotNetSeleniumExtras.WaitHelpers" Version="3.11.0" />
     <PackageReference Include="Selenium.WebDriver" Version="3.141.0" />
