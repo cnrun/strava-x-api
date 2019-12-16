@@ -9,9 +9,9 @@ using System.Diagnostics;
 
 namespace Prototype.Tools
 {
-    class CancelExcecution:Exception
+    class CancelExecution:Exception
     {
-        public CancelExcecution(string msg):base(msg) {}
+        public CancelExecution(string msg):base(msg) {}
     }
     public class QueryActivities
     {
@@ -70,9 +70,9 @@ namespace Prototype.Tools
                             TimeSpan ts = stopWatch.Elapsed;
                             if (TimerSeconds>0 && ts.TotalSeconds>TimerSeconds)
                             {
-                                Console.WriteLine($"Timer reached after {ts.ToString()} now exit with {TimerExitCode}.");
-                                // exit with error code, container should restart
                                 ret = TimerExitCode;
+                                Console.WriteLine($"Timer reached after {ts.ToString()} now exit with {ret}.");
+                                // exit with error code, container should restart
                                 break;
                             }
                             Boolean KeepRunning=true;
@@ -89,7 +89,7 @@ namespace Prototype.Tools
                             AthleteIdList = qAthleteCreated.Intersect(qAthleteReserved).Take(100).ToList();
                         }
                     }
-                    catch(CancelExcecution e)
+                    catch(CancelExecution e)
                     {
                         Console.WriteLine($"Execution has been canceled: {e.Message}");
                     }
@@ -175,7 +175,7 @@ namespace Prototype.Tools
                 {
                     Console.WriteLine($"break {KeepRunning} {Count}");
                     // regular exit, container should ended.
-                    throw new CancelExcecution("break {KeepRunning} {Count}");
+                    throw new CancelExecution("break {KeepRunning} {Count}");
                     // ret = 0;
                     // break;
                 }
@@ -213,7 +213,7 @@ namespace Prototype.Tools
                 {
                     ret = queryRange(stravaXApi, db, queries);
                 }
-                catch(CancelExcecution e)
+                catch(CancelExecution e)
                 {
                     // just to clarify that it may happend.
                     // finally will also call in that case.

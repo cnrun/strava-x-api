@@ -129,6 +129,7 @@ namespace Prototype
             {
                 StravaXApi.logger.LogDebug("quit strava-x-api tools");
             }
+            StravaXApi.logger.LogInformation($"exit StravaXApi tools with {ret}");
             return ret; 
         }
         private void CreateLogger()
