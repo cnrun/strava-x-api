@@ -27,8 +27,22 @@ namespace Prototype.Tools
                 p.WriteOptionDescriptions(Console.Out);
                 throw new ArgumentException("missing destination");    
             }
-            DbContextOptions optionsSrc = new DbContextOptionsBuilder().UseSqlite(SrcConnectionString).Options;
-            DbContextOptions optionsDst = new DbContextOptionsBuilder().UseSqlServer(DestConnectionString).Options;
+
+            Console.WriteLine($"SRC: {SrcConnectionString}");
+            Console.WriteLine($"DST: {DestConnectionString}");
+
+            DbContextOptions optionsSrc;
+            if (SrcConnectionString.StartsWith("Data Source"))
+                optionsSrc = new DbContextOptionsBuilder().UseSqlite(SrcConnectionString).Options;
+            else
+                optionsSrc = new DbContextOptionsBuilder().UseSqlServer(SrcConnectionString).Options;
+
+            DbContextOptions optionsDst;
+            if (DestConnectionString.StartsWith("Data Source"))
+                optionsDst = new DbContextOptionsBuilder().UseSqlite(DestConnectionString).Options;
+            else
+                optionsDst = new DbContextOptionsBuilder().UseSqlServer(DestConnectionString).Options;
+
             using (StravaXApiContext DbSrc = new StravaXApiContext(optionsSrc))
             {
                 Console.WriteLine($"SRC: Queries stored {DbSrc.ActivityQueriesDB.Count()}");
@@ -62,11 +76,11 @@ namespace Prototype.Tools
                         // skip as much activities as already present.
                         // Only done because the first imports try has broked, but
                         // a better system should be developped in the future.
-                        if (i++<destLen)
-                        {
-                            continue;
-                        }
-                        if (i%100==0)
+                        // if (i++<destLen)
+                        // {
+                        //     continue;
+                        // }
+                        if (++i%100==0)
                             Console.WriteLine($"activities {i}/{totalCount}");
                         DbDst.ActivityShortDB.Add(act);
                     }

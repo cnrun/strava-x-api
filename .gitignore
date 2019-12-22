@@ -335,3 +335,5 @@ Prototype/*.db
 Prototype/data
 .vscode/
 Prototype/misc/delivery/Azure.el*.azcli
+Prototype/misc/sql/create_user.sql
+Prototype/misc/sql/rename_table.sql

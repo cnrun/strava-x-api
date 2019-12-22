@@ -51,15 +51,26 @@ namespace Prototype.Model
 {    
     public class StravaXApiContext : DbContext
     {
+        private string SchemaName {get; set;}
         public DbSet<ActivityShort> ActivityShortDB { get; set; }
         public DbSet<AthleteShort> AthleteShortDB { get; set; }
         public DbSet<ActivityRangeQuery> ActivityQueriesDB { get; set; }
 
         private Boolean ignoreEnvironmentVariable;
+        /// constructor with connection string defined in env.
         public StravaXApiContext() : base()
-        { ignoreEnvironmentVariable = false; }
+        {
+            ignoreEnvironmentVariable = false;
+            SchemaName=Environment.GetEnvironmentVariable("CONNECTION_SCHEMA");
+            this.Database.SetCommandTimeout(120);
+        }
+        /// constructor for clone, connection string definedin parameter.
         public StravaXApiContext(DbContextOptions options) : base(options)
-        { ignoreEnvironmentVariable = true; }
+        {
+            ignoreEnvironmentVariable = true;
+            SchemaName=Environment.GetEnvironmentVariable("CONNECTION_SCHEMA");
+            this.Database.SetCommandTimeout(120);
+        }
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
             string ConnectionString=Environment.GetEnvironmentVariable("CONNECTION_STRING");
@@ -80,11 +91,13 @@ namespace Prototype.Model
             else
             {
                 // i.e. ""Server=tcp:strava-x-api.database.windows.net,1433;Initial Catalog=StravaActivityDB;Persist Security Info=False;User ID=-----;Password=------;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;""
-                options.UseSqlServer(ConnectionString);
+                options.UseSqlServer(ConnectionString, x=>x.MigrationsHistoryTable("__StravaXApiMigrationsHistory", SchemaName));
             }
         }
 
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
-            => modelBuilder.Entity<ActivityRangeQuery>().HasKey(c => new { c.AthleteId, c.DateFrom, c.DateTo });
+            // considering chanching prefix: https://stackoverflow.com/a/22077116/281188
+            => modelBuilder.HasDefaultSchema(SchemaName).Entity<ActivityRangeQuery>().HasKey(c => new { c.AthleteId, c.DateFrom, c.DateTo });
     }
 }
