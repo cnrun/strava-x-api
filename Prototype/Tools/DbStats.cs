@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Net;
 using Prototype.Model;
 using System.Collections.Generic;
 using NDesk.Options;
@@ -28,12 +29,14 @@ namespace Prototype.Tools
             bool doGarbage=false;
             bool doAll=false;
             bool doListimages=false;
+            bool doListMaps=false;
             string AthleteId=null;
             bool doAthleteStats=false;
             var p = new OptionSet () {
                 { "g|garbage",   v => { doGarbage=true; } },
                 { "a|all",   v => { doAll=true; } },
-                { "l|listimages",   v => { doListimages=true; } },
+                { "li|listimages",   v => { doListimages=true; } },
+                { "lm|listmaps",   v => { doListMaps=true; } },
                 { "aid|athleteid=",   v => { AthleteId=v; } },
                 { "as|athlete-stats",   v => { doAthleteStats=true; } },
             };
@@ -196,6 +199,25 @@ namespace Prototype.Tools
                         }
                         logger.LogInformation($" images {imageCount}");
                     }
+                    if (doAll || doListMaps)
+                    {
+                        List<ActivityShort> activitiesWithImages = db.ActivityShortDB.Where(a => a.ActivityImagesListAsString.Length>0 && a.ActivityType==ActivityType.BackcountrySki).ToList();
+                        logger.LogInformation($" activity count:{activitiesWithImages.Count()}");
+                        int imageCount=0;
+                        foreach(ActivityShort activity in activitiesWithImages)
+                        {
+                            string ImageMapUrl = activity.ActivityImageMapUrl;
+                            if (ImageMapUrl==null)
+                                continue;
+                            imageCount++;
+                            logger.LogInformation($"activity {activity.ActivityTitle} {ImageMapUrl}");
+                            WebClient webClient = new WebClient();
+                            string outputDir=$"maps/{activity.AthleteId}";
+                            string outputFilename=$"{activity.ActivityId}.png";
+                            logger.LogWarning($"NOT IMPLEMENTED");
+                        }
+                        logger.LogInformation($" images {imageCount}/{activitiesWithImages}");
+                    }                    
 
                     if (doAll || doAthleteStats)
                     {

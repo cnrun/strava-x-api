@@ -87,6 +87,8 @@ namespace Prototype
                     ret = Prototype.Tools.DbInit.EnsureCreated(args);
                 else if(exec_cmd=="clone")
                     ret = Prototype.Tools.DbClone.DoClone(args);
+                else if(exec_cmd=="get-images")
+                    ret = Prototype.Tools.ImageDownloader.Downloader(args);
                 else
                 {
                     switch(exec_cmd)

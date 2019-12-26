@@ -337,3 +337,5 @@ Prototype/data
 Prototype/misc/delivery/Azure.el*.azcli
 Prototype/misc/sql/create_user.sql
 Prototype/misc/sql/rename_table.sql
+Prototype/maps
+Prototype/images
