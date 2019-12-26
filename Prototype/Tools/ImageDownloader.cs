@@ -120,13 +120,21 @@ namespace Prototype.Tools
                         logger.LogDebug($"directory for maps created at {DirInfo.FullName}");
                     }
                     logger.LogDebug($"download {ImageMapUrl} in {outputDir}/{outputFilename}");
-                    webClient.DownloadFile(ImageMapUrl,$"{outputDir}/{outputFilename}");
-                    imageCount++;
-                    if (imageCount%10==0)
+                    try
                     {
-                        logger.LogInformation($" images {imageCount}/{activitiesWithMaps.Count}");
+                        webClient.DownloadFile(ImageMapUrl,$"{outputDir}/{outputFilename}");
+                        imageCount++;
+                        if (imageCount%10==0)
+                        {
+                            logger.LogInformation($" images {imageCount}/{activitiesWithMaps.Count}");
+                        }
+                        if (imageCount>=maxCount) throw new Exception($"max count {imageCount}>={maxCount} reached");
                     }
-                    if (imageCount>=maxCount) throw new Exception($"max count {imageCount}>={maxCount} reached");
+                    catch(System.Net.WebException ex)
+                    {
+                        logger.LogError($"can't download {ImageMapUrl} in {outputDir}/{outputFilename}");
+                        logger.LogError($"Message {ex.Message}");
+                    }
                 }
             }
             logger.LogInformation($"DONE images {imageCount}/{activitiesWithMaps.Count}");
@@ -173,7 +181,15 @@ namespace Prototype.Tools
                             logger.LogInformation($" images {imageCount}/{activitiesWithImages.Count}");
                         }
                         logger.LogDebug($"download {imageUri} in {outputDir}/{outputFilename}");
-                        webClient.DownloadFile(imageUri,$"{outputDir}/{outputFilename}");
+                        try
+                        {
+                            webClient.DownloadFile(imageUri,$"{outputDir}/{outputFilename}");
+                        }
+                        catch(System.Net.WebException ex)
+                        {
+                            logger.LogError($"can't download {imageUri} in {outputDir}/{outputFilename}");
+                            logger.LogError($"Message {ex.Message}");
+                        }
                     }
                     else{
                         logger.LogDebug($"skip {imageUri} in {outputDir}/{outputFilename}");
