@@ -40,18 +40,16 @@ namespace Prototype.Tools
             p.Parse(args);
             int ret = -1;
             int maxCount=int.MaxValue;
-            if (maxCountStr!=null) {
+            if (maxCountStr!=null)
+            {
                 maxCount=int.Parse(maxCountStr);
+                logger.LogInformation($" limit download to {maxCount}");
             }
             try
             {
                 using (StravaXApiContext db = new StravaXApiContext())
                 {
                     IQueryable<ActivityShort> dbs = db.ActivityShortDB.OrderByDescending(b => b.ActivityDate);
-                    if (AthleteId!=null)
-                    {
-                        dbs=dbs.Where(a => a.AthleteId==AthleteId);
-                    }
                     if (ActivityTypeStr!=null)
                     {
                         ActivityType ActivityType=(ActivityType)Enum.Parse(typeof(ActivityType),ActivityTypeStr);
@@ -60,82 +58,29 @@ namespace Prototype.Tools
 
                     if (doMaps)
                     {
-                        WebClient webClient = new WebClient();
-                        List<ActivityShort> activitiesWithMaps = dbs.Where(a => a.ActivityImageMapUrl!=null).ToList();
-                        logger.LogInformation($" activity with maps {(AthleteId==null?"all athletes":AthleteId)}/{(ActivityTypeStr==null?"all types":ActivityTypeStr)} :{activitiesWithMaps.Count()}");
-                        int imageCount=0;
-                        foreach(ActivityShort activity in activitiesWithMaps)
+                        if (AthleteId!=null)    
+                            ret = RetrieveMaps(dbs, logger, AthleteId, ActivityTypeStr, maxCount);
+                        else
                         {
-                            string ImageMapUrl = activity.ActivityImageMapUrl;
-                            if (ImageMapUrl==null)
-                                continue;
-                            logger.LogDebug($"activity {activity.ActivityTitle} {ImageMapUrl}");
-                            string outputDir=$"maps/{activity.AthleteId}";
-                            string outputFilename=$"{activity.ActivityId}.png";
-                            if (!File.Exists($"{outputDir}/{outputFilename}"))
+                            List<AthleteShort> athletes = db.AthleteShortDB.OrderBy(a => a.AthleteId).ToList();
+                            foreach(AthleteShort athlete in athletes)
                             {
-                                if (!Directory.Exists(outputDir))
-                                {
-                                    DirectoryInfo DirInfo = Directory.CreateDirectory(outputDir);
-                                    logger.LogDebug($"directory for maps created at {DirInfo.FullName}");
-                                }
-                                logger.LogDebug($"download {ImageMapUrl} in {outputDir}/{outputFilename}");
-                                webClient.DownloadFile(ImageMapUrl,$"{outputDir}/{outputFilename}");
-                                imageCount++;
-                                if (imageCount%10==0)
-                                {
-                                    logger.LogInformation($" images {imageCount}/{activitiesWithMaps.Count}");
-                                }
-                                if (imageCount>=maxCount) break;
+                                ret = RetrieveMaps(dbs, logger, athlete.AthleteId, ActivityTypeStr, maxCount);
                             }
                         }
-                        logger.LogInformation($"DONE images {imageCount}/{activitiesWithMaps.Count}");
                     }
                     if (doActivityImages)
                     {
-                        WebClient webClient = new WebClient();
-                        List<ActivityShort> activitiesWithImages = dbs.Where(a => a.ActivityImagesListAsString.Length>0).ToList();
-                        logger.LogInformation($" activity with images {(AthleteId==null?"all athletes":AthleteId)}/{(ActivityTypeStr==null?"all types":ActivityTypeStr)} :{activitiesWithImages.Count()}");
-                        int imageCount=0;
-                        foreach(ActivityShort activity in activitiesWithImages)
+                        if (AthleteId!=null)
+                            ret = RetrieveActivityImages(dbs, logger, AthleteId, ActivityTypeStr, maxCount);
+                        else
                         {
-                            List<string> ActivityImagesUrl = activity.ActivityImagesList;
-                            if (ActivityImagesUrl==null || ActivityImagesUrl.Count==0)
-                                continue;
-                            int countInActivity=0;
-                            foreach(string imageUri in ActivityImagesUrl)
+                            List<AthleteShort> athletes = db.AthleteShortDB.OrderBy(a => a.AthleteId).ToList();
+                            foreach(AthleteShort athlete in athletes)
                             {
-                                countInActivity++;
-                                logger.LogDebug($"activity {activity.ActivityTitle}{countInActivity}/{ActivityImagesUrl.Count} {imageUri}");
-                                string outputDir=$"images/{activity.AthleteId}/{activity.ActivityId}";
-                                string imageFilename=imageUri.Split("/").Last();
-                                string outputFilename=imageFilename;
-                                if (!imageFilename.ToLower().EndsWith(".jpg"))
-                                {
-                                    outputFilename=$"{imageFilename}.jpg";
-                                }
-                                if (!File.Exists($"{outputDir}/{outputFilename}"))
-                                {
-                                    if (!Directory.Exists(outputDir))
-                                    {
-                                        DirectoryInfo DirInfo = Directory.CreateDirectory(outputDir);
-                                        logger.LogDebug($"directory for maps created at {DirInfo.FullName}");
-                                    }
-                                    imageCount++;
-                                    if (imageCount%10==0)
-                                    {
-                                        logger.LogInformation($" images {imageCount}/{activitiesWithImages.Count}");
-                                    }
-                                    logger.LogDebug($"download {imageUri} in {outputDir}/{outputFilename}");
-                                    webClient.DownloadFile(imageUri,$"{outputDir}/{outputFilename}");
-                                }
-                                else{
-                                    logger.LogDebug($"skip {imageUri} in {outputDir}/{outputFilename}");
-                                }
+                                ret = RetrieveActivityImages(dbs, logger, athlete.AthleteId, ActivityTypeStr, maxCount);
                             }
-                            if (imageCount>=maxCount) break;
                         }
-                        logger.LogInformation($"DONE images {imageCount}/{activitiesWithImages.Count}");
                     }
                 }
                 ret = 0 ;
@@ -146,6 +91,98 @@ namespace Prototype.Tools
                 ret = 1; 
             }
             return ret;
+        }
+        static private int RetrieveMaps(IQueryable<ActivityShort> dbs, ILogger logger, string AthleteId, string ActivityTypeStr, int maxCount)
+        {
+            WebClient webClient = new WebClient();
+            var _dbs=dbs;
+            if (AthleteId!=null)
+                _dbs=_dbs.Where(a => a.AthleteId==AthleteId);
+            _dbs.Where(a => a.ActivityImageMapUrl!=null);
+            
+            logger.LogInformation($"retrieve activity with maps list");
+            List<ActivityShort> activitiesWithMaps = _dbs.ToList();
+            logger.LogInformation($" activity with maps {(AthleteId==null?"all athletes":AthleteId)}/{(ActivityTypeStr==null?"all types":ActivityTypeStr)} :{activitiesWithMaps.Count()}");
+            int imageCount=0;
+            foreach(ActivityShort activity in activitiesWithMaps)
+            {
+                string ImageMapUrl = activity.ActivityImageMapUrl;
+                if (ImageMapUrl==null)
+                    continue;
+                logger.LogDebug($"activity {activity.ActivityTitle} {ImageMapUrl}");
+                string outputDir=$"maps/{activity.AthleteId}";
+                string outputFilename=$"{activity.ActivityId}.png";
+                if (!File.Exists($"{outputDir}/{outputFilename}"))
+                {
+                    if (!Directory.Exists(outputDir))
+                    {
+                        DirectoryInfo DirInfo = Directory.CreateDirectory(outputDir);
+                        logger.LogDebug($"directory for maps created at {DirInfo.FullName}");
+                    }
+                    logger.LogDebug($"download {ImageMapUrl} in {outputDir}/{outputFilename}");
+                    webClient.DownloadFile(ImageMapUrl,$"{outputDir}/{outputFilename}");
+                    imageCount++;
+                    if (imageCount%10==0)
+                    {
+                        logger.LogInformation($" images {imageCount}/{activitiesWithMaps.Count}");
+                    }
+                    if (imageCount>=maxCount) throw new Exception($"max count {imageCount}>={maxCount} reached");
+                }
+            }
+            logger.LogInformation($"DONE images {imageCount}/{activitiesWithMaps.Count}");
+            return 0;
+        }
+        static private int RetrieveActivityImages(IQueryable<ActivityShort> dbs, ILogger logger, string AthleteId, string ActivityTypeStr, int maxCount)
+        {
+            WebClient webClient = new WebClient();
+            var _dbs=dbs;
+            if (AthleteId!=null)
+                _dbs=_dbs.Where(a => a.AthleteId==AthleteId);
+            _dbs.Where(a => a.ActivityImagesListAsString.Length>0);
+            logger.LogInformation($"retrieve activity with image list");
+            List<ActivityShort> activitiesWithImages = _dbs.ToList();
+            logger.LogInformation($" activity with images {(AthleteId==null?"all athletes":AthleteId)}/{(ActivityTypeStr==null?"all types":ActivityTypeStr)} :{activitiesWithImages.Count()}");
+            int imageCount=0;
+            foreach(ActivityShort activity in activitiesWithImages)
+            {
+                List<string> ActivityImagesUrl = activity.ActivityImagesList;
+                if (ActivityImagesUrl==null || ActivityImagesUrl.Count==0)
+                    continue;
+                int countInActivity=0;
+                foreach(string imageUri in ActivityImagesUrl)
+                {
+                    countInActivity++;
+                    logger.LogDebug($"activity {activity.ActivityTitle}{countInActivity}/{ActivityImagesUrl.Count} {imageUri}");
+                    string outputDir=$"images/{activity.AthleteId}/{activity.ActivityId}";
+                    string imageFilename=imageUri.Split("/").Last();
+                    string outputFilename=imageFilename;
+                    if (!imageFilename.ToLower().EndsWith(".jpg"))
+                    {
+                        outputFilename=$"{imageFilename}.jpg";
+                    }
+                    if (!File.Exists($"{outputDir}/{outputFilename}"))
+                    {
+                        if (!Directory.Exists(outputDir))
+                        {
+                            DirectoryInfo DirInfo = Directory.CreateDirectory(outputDir);
+                            logger.LogDebug($"directory for maps created at {DirInfo.FullName}");
+                        }
+                        imageCount++;
+                        if (imageCount%10==0)
+                        {
+                            logger.LogInformation($" images {imageCount}/{activitiesWithImages.Count}");
+                        }
+                        logger.LogDebug($"download {imageUri} in {outputDir}/{outputFilename}");
+                        webClient.DownloadFile(imageUri,$"{outputDir}/{outputFilename}");
+                    }
+                    else{
+                        logger.LogDebug($"skip {imageUri} in {outputDir}/{outputFilename}");
+                    }
+                }
+                if (imageCount>=maxCount) throw new Exception($"max count {imageCount}>={maxCount} reached");
+            }
+            logger.LogInformation($"DONE images {imageCount}/{activitiesWithImages.Count}");
+            return 0;
         }
     }
 }
