@@ -24,7 +24,7 @@ RUN dotnet publish -c Release -o out
 # COPY tests/. .
 # ENTRYPOINT ["dotnet", "test", "--logger:trx"]
 
-FROM mcr.microsoft.com/dotnet/core/runtime:3.0 AS runtime
+FROM mcr.microsoft.com/dotnet/core/runtime:3.1 AS runtime
 WORKDIR /app
 COPY --from=build /app/Prototype/out ./
 ENTRYPOINT ["dotnet", "Prototype.dll"]
