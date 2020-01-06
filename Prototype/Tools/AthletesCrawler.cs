@@ -1,10 +1,6 @@
 using System;
-using System.Threading;
 using System.Linq;
-using OpenQA.Selenium;
 using Prototype.Model;
-using Prototype;
-using System.Collections.Generic;
 using NDesk.Options;
 
 namespace Prototype.Tools

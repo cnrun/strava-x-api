@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
@@ -11,12 +12,26 @@ using Prototype.Model;
 using System.Collections.Generic;
 using NDesk.Options;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
+
 namespace Prototype
 {
     public class TooManyStravaRequestException : Exception
     {
         public TooManyStravaRequestException(string Message): base(Message)
         {}
+    }
+    public class ActivityException : Exception
+    {
+        public string ActivityId {get; protected set;}
+        public ActivityException(string AthleteId)
+        {
+            this.ActivityId=ActivityId;
+        }
+        public ActivityException(string ActivityId, string message):base(message)
+        {
+            this.ActivityId=ActivityId;
+        }
     }
     public class AthleteException : Exception
     {
@@ -33,6 +48,11 @@ namespace Prototype
     public class PrivateAthleteException : AthleteException
     {
         public PrivateAthleteException(string AthleteId):base(AthleteId)
+        {}
+    }
+    public class PrivateGpxException : ActivityException
+    {
+        public PrivateGpxException(string ActivityId):base(ActivityId)
         {}
     }
     public class NoFirstDateFoundException : AthleteException
@@ -94,6 +114,7 @@ namespace Prototype
                     switch(exec_cmd)
                     {
                         case "get-activities":
+                        case "get-gpx":
                         case "get-athletes":
                         case "get-queries":
                         case "query-activities":
@@ -106,6 +127,9 @@ namespace Prototype
                     {
                         case "get-activities":
                             ret = Prototype.Tools.ActivitiesCrawler.ReadActivitiesForAthlete(StravaXApi, args);
+                        break;
+                        case "get-gpx":
+                            ret = Prototype.Tools.GpxDownloader.Downloader(StravaXApi, args);
                         break;
                         case "get-athletes":
                             ret = Prototype.Tools.AthletesCrawler.ReadAthleteConnectionsForAthlete(StravaXApi, args);
@@ -279,6 +303,160 @@ namespace Prototype
 
         }
 
+        private string readAlertMessage()
+        {
+            IWebElement AlertElt=null;
+            string WarningMessage=null;
+            try
+            {
+                // /html/body/div[2]/div[1]
+                // search for alert or error messages on the page.
+                var AlertElts=BrowserDriver.FindElements(By.XPath(".//div[contains(@class,'alert-message')]"));
+                foreach(var ae in AlertElts)
+                {
+                    logger.LogDebug($"Strava alert-message found: {ae.Text}");
+                    WarningMessage = ae.Text;
+                    AlertElt=ae;
+                }
+                if (WarningMessage==null)
+                {
+                    AlertElts=BrowserDriver.FindElements(By.XPath(".//div[contains(@class,'alert')]"));
+                    foreach(var ae in AlertElts)
+                    {
+                        logger.LogDebug($"Strava alert found: {ae.Text}");
+                        WarningMessage = ae.Text;
+                        AlertElt=ae;
+                    }
+                }
+                if (WarningMessage==null)
+                {
+                    AlertElts=BrowserDriver.FindElements(By.XPath(".//div[contains(@class,'error-page')]"));
+                    foreach(var ae in AlertElts)
+                    {
+                        logger.LogDebug($"Strava error found: {ae.Text}");
+                        WarningMessage = ae.Text;
+                        AlertElt=ae;
+                    }
+                }
+                // AlertElt=BrowserDriver.FindElement(By.XPath("/html/body/div[2]"));
+            }
+            catch(WebDriverException e)
+            {
+                // Or may try one more time (cause Timeout), but first check if it's a private profile.
+                logger.LogWarning(e.Message);
+                logger.LogDebug(e.StackTrace);
+                AlertElt=null;
+            }
+            return WarningMessage;
+        }
+
+        public void getActivityGpxSelenium(String ActivityId, String destFilepath)
+        {
+            String url = $"https://www.strava.com/activities/{ActivityId}/export_gpx";
+
+            //
+            // 1: check download directory content
+            //
+            string DownloadDir=".";
+            // Location where the browser store the downloaded files.
+            // If not specified, the current working directory will be used.
+            if (Environment.GetEnvironmentVariable("DOWNLOAD_DIR")!=null)
+            {
+                DownloadDir=Environment.GetEnvironmentVariable("DOWNLOAD_DIR");
+            }
+            DirectoryInfo di = new DirectoryInfo(DownloadDir);
+            List<String> filesBefore = new List<String>();
+            foreach(FileInfo fi in di.EnumerateFiles())
+            {
+                if (fi.Name.ToLower().EndsWith(".gpx"))
+                {
+                    throw new Exception($"download directory countains gpx file {fi.Name}. Please remove all gpx files from download directory.");
+                }
+                filesBefore.Add(fi.Name);
+            }
+
+
+            //
+            // 2: access download page
+            //
+            logger.LogInformation($"open {url}");
+            BrowserDriver.Navigate().GoToUrl(url);            
+
+            //
+            // 3: check alert messages
+            //
+            string WarningMessage=readAlertMessage();
+
+            IEnumerable<FileInfo> filesAfter = di.EnumerateFiles();
+
+            //
+            // 4: wait until download ends.
+            //
+            bool WaitDownload=true;
+            // If there is a warningwe do not need to wait as so long.
+            int TimerSeconds=(WarningMessage!=null)?2:10;
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
+            while (WaitDownload)
+            {
+                int detectedFilesCount=0;
+                foreach(FileInfo fi in filesAfter)
+                {
+                    if (filesBefore.Contains(fi.Name))
+                    {
+                        // no new file
+                        logger.LogDebug($"SKIP file: {fi}");
+                    }
+                    else
+                    {
+                        if (fi.Name.EndsWith(".crdownload"))
+                        {
+                            logger.LogDebug($"WAIT file: {fi} {fi.Name}");
+                            WaitDownload=true;
+                            Thread.Sleep(200);
+                            detectedFilesCount++;
+                        }
+                        else
+                        {
+                            logger.LogInformation($"FOUND file: {fi} {fi.Name} Rename {fi} to {destFilepath}");                    
+                            WaitDownload=false;
+                            fi.MoveTo(destFilepath);
+                            detectedFilesCount++;
+                        }
+                    }
+                }
+                if (detectedFilesCount==0)
+                {
+                    TimeSpan ts = stopWatch.Elapsed;
+                    // logger.LogInformation($"detectedFilesCount: {detectedFilesCount} {ts.TotalSeconds} from {filesAfter.Count()}");
+                    if (TimerSeconds>0 && ts.TotalSeconds>TimerSeconds)
+                    {
+                        // recheck message to be sure
+                        if (WarningMessage==null)
+                            WarningMessage=readAlertMessage();
+                        if (WarningMessage!=null)
+                        {
+                            // if a warning message exit, we could publify it.
+                            throw new PrivateGpxException(WarningMessage);
+                        }
+                        else
+                        {
+                            throw new Exception($"can't find GPX track file for {ActivityId} at {url}. wait ({ts.TotalSeconds}s)");
+                        }
+                    }
+                }
+                filesAfter = di.EnumerateFiles();
+            }
+            // after download, no gpx files should be present.
+            foreach(FileInfo fi in di.EnumerateFiles())
+            {
+                if (fi.Name.ToLower().EndsWith(".gpx"))
+                {
+                    throw new Exception($"download directory countains gpx file {fi.Name}. Please remove all gpx files from download directory.");
+                }
+            }
+
+        }
         /**
          * Find the oldest possible date for an activity
          */

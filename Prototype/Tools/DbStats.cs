@@ -30,14 +30,18 @@ namespace Prototype.Tools
             bool doAll=false;
             bool doListimages=false;
             bool doListMaps=false;
+            bool doActivityList=false;
             string AthleteId=null;
+            string ActivityTypeStr=null;
             bool doAthleteStats=false;
             var p = new OptionSet () {
                 { "g|garbage",   v => { doGarbage=true; } },
                 { "a|all",   v => { doAll=true; } },
+                { "act|listactivities",   v => { doActivityList=true; } },
                 { "li|listimages",   v => { doListimages=true; } },
                 { "lm|listmaps",   v => { doListMaps=true; } },
                 { "aid|athleteid=",   v => { AthleteId=v; } },
+                { "at|activity_type=",   v => { ActivityTypeStr=v; } },
                 { "as|athlete-stats",   v => { doAthleteStats=true; } },
             };
             p.Parse(args);
@@ -230,6 +234,30 @@ namespace Prototype.Tools
                         logger.LogInformation($"  private {PrivateAthleteCount}");
                         int CreatedAthleteCount = db.ActivityQueriesDB.Where(a => a.Status==QueryStatus.Created).Select(a=>a.AthleteId).Distinct().Count();
                         logger.LogInformation($"  {QueryStatus.Created} {CreatedAthleteCount}");
+                    }
+                    if (doAll || doActivityList)
+                    {
+                        List<ActivityShort> activities;
+                        IQueryable<ActivityShort> dbs = db.ActivityShortDB.OrderByDescending(b => b.ActivityDate);
+                        if (ActivityTypeStr!=null)
+                        {
+                            ActivityType ActivityType=(ActivityType)Enum.Parse(typeof(ActivityType),ActivityTypeStr);
+                            dbs=dbs.Where(a => a.ActivityType==ActivityType);
+                        }
+                        if (AthleteId!=null)
+                        {
+                            dbs=dbs.Where(a => a.AthleteId==AthleteId);
+                        }
+                        activities = dbs.ToList();
+                        logger.LogInformation($"List activities for {(AthleteId==null?"all athletes":AthleteId)}/{(ActivityTypeStr==null?"all types":ActivityTypeStr)} :{activities.Count()}");
+
+                        if (activities.Count>0)
+                        {
+                            foreach(ActivityShort activity in activities)
+                            {
+                                logger.LogInformation($" {activity}");
+                            }
+                        }
                     }
                     /*
                     {

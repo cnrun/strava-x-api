@@ -100,10 +100,11 @@ namespace Prototype.Tools
                 _dbs=_dbs.Where(a => a.AthleteId==AthleteId);
             _dbs.Where(a => a.ActivityImageMapUrl!=null);
             
-            logger.LogInformation($"retrieve activity with maps list");
+            logger.LogDebug($"retrieve maps list");
             List<ActivityShort> activitiesWithMaps = _dbs.ToList();
-            logger.LogInformation($" activity with maps {(AthleteId==null?"all athletes":AthleteId)}/{(ActivityTypeStr==null?"all types":ActivityTypeStr)} :{activitiesWithMaps.Count()}");
+            logger.LogDebug($"BEGIN maps for {(AthleteId==null?"all athletes":AthleteId)}/{(ActivityTypeStr==null?"all types":ActivityTypeStr)} :{activitiesWithMaps.Count()}");
             int imageCount=0;
+            int skipCount=0;
             foreach(ActivityShort activity in activitiesWithMaps)
             {
                 string ImageMapUrl = activity.ActivityImageMapUrl;
@@ -124,7 +125,7 @@ namespace Prototype.Tools
                     {
                         webClient.DownloadFile(ImageMapUrl,$"{outputDir}/{outputFilename}");
                         imageCount++;
-                        if (imageCount%10==0)
+                        if (imageCount%100==0)
                         {
                             logger.LogInformation($" images {imageCount}/{activitiesWithMaps.Count}");
                         }
@@ -136,8 +137,12 @@ namespace Prototype.Tools
                         logger.LogError($"Message {ex.Message}");
                     }
                 }
+                else
+                {
+                    skipCount++;
+                }
             }
-            logger.LogInformation($"DONE images {imageCount}/{activitiesWithMaps.Count}");
+            logger.LogInformation($"DONE maps read:{imageCount} skip:{skipCount} for {(AthleteId==null?"all athletes":AthleteId)}/{(ActivityTypeStr==null?"all types":ActivityTypeStr)} :{activitiesWithMaps.Count()}");
             return 0;
         }
         static private int RetrieveActivityImages(IQueryable<ActivityShort> dbs, ILogger logger, string AthleteId, string ActivityTypeStr, int maxCount)
