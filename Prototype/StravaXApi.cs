@@ -109,6 +109,8 @@ namespace Prototype
                     ret = Prototype.Tools.DbClone.DoClone(args);
                 else if(exec_cmd=="get-images")
                     ret = Prototype.Tools.ImageDownloader.Downloader(args);
+                else if(exec_cmd=="gpx2kml")
+                    ret = Prototype.Tools.GpxToKml.Convert(args);
                 else
                 {
                     switch(exec_cmd)
@@ -420,7 +422,15 @@ namespace Prototype
                         {
                             logger.LogInformation($"FOUND file: {fi} {fi.Name} Rename {fi} to {destFilepath}");                    
                             WaitDownload=false;
-                            fi.MoveTo(destFilepath);
+                            try{
+                                fi.MoveTo(destFilepath);
+                            }
+                            catch(FileNotFoundException)
+                            {
+                                logger.LogWarning($"file to move not found {fi.Name}, wait and try again.");
+                                Thread.Sleep(1000);
+                                fi.MoveTo(destFilepath);
+                            }
                             detectedFilesCount++;
                         }
                     }

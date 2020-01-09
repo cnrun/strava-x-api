@@ -52,6 +52,8 @@ namespace Prototype.Tools
                     {
                         dbs=dbs.Where(a => a.AthleteId==AthleteId);
                     }
+                    // Ignore Activities without image map. They have probably been enterred without gps-track.
+                    dbs=dbs.Where(a => a.ActivityImageMapUrl!=null);
                     activities = dbs.ToList();
                 }
                 logger.LogInformation($"BEGIN GPX Download for {(AthleteId==null?"all athletes":AthleteId)}/{(ActivityTypeStr==null?"all types":ActivityTypeStr)} :{activities.Count()}");
