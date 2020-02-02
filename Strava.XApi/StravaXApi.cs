@@ -8,13 +8,13 @@ using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
 using OpenQA.Selenium.Remote;
 using System.Security;
-using Prototype.Model;
+using Strava.XApi.Model;
 using System.Collections.Generic;
 using NDesk.Options;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 
-namespace Prototype
+namespace Strava.XApi
 {
     public class TooManyStravaRequestException : Exception
     {
@@ -102,15 +102,15 @@ namespace Prototype
             try
             {                
                 if(exec_cmd=="stats")
-                    ret = Prototype.Tools.DbStats.WriteState(args);
+                    ret = Strava.XApi.Tools.DbStats.WriteState(args);
                 else if(exec_cmd=="init")
-                    ret = Prototype.Tools.DbInit.EnsureCreated(args);
+                    ret = Strava.XApi.Tools.DbInit.EnsureCreated(args);
                 else if(exec_cmd=="clone")
-                    ret = Prototype.Tools.DbClone.DoClone(args);
+                    ret = Strava.XApi.Tools.DbClone.DoClone(args);
                 else if(exec_cmd=="get-images")
-                    ret = Prototype.Tools.ImageDownloader.Downloader(args);
+                    ret = Strava.XApi.Tools.ImageDownloader.Downloader(args);
                 else if(exec_cmd=="gpx2kml")
-                    ret = Prototype.Tools.GpxToKml.Convert(args);
+                    ret = Strava.XApi.Tools.GpxToKml.Convert(args);
                 else
                 {
                     switch(exec_cmd)
@@ -128,19 +128,19 @@ namespace Prototype
                     switch(exec_cmd)
                     {
                         case "get-activities":
-                            ret = Prototype.Tools.ActivitiesCrawler.ReadActivitiesForAthlete(StravaXApi, args);
+                            ret = Strava.XApi.Tools.ActivitiesCrawler.ReadActivitiesForAthlete(StravaXApi, args);
                         break;
                         case "get-gpx":
-                            ret = Prototype.Tools.GpxDownloader.Downloader(StravaXApi, args);
+                            ret = Strava.XApi.Tools.GpxDownloader.Downloader(StravaXApi, args);
                         break;
                         case "get-athletes":
-                            ret = Prototype.Tools.AthletesCrawler.ReadAthleteConnectionsForAthlete(StravaXApi, args);
+                            ret = Strava.XApi.Tools.AthletesCrawler.ReadAthleteConnectionsForAthlete(StravaXApi, args);
                         break;
                         case "get-queries":
-                            ret = Prototype.Tools.QueriesGenerator.WriteQueriesForAthletes(StravaXApi);
+                            ret = Strava.XApi.Tools.QueriesGenerator.WriteQueriesForAthletes(StravaXApi);
                         break;
                         case "query-activities":
-                            ret = Prototype.Tools.QueryActivities.SendQueriesForActivities(StravaXApi, args);
+                            ret = Strava.XApi.Tools.QueryActivities.SendQueriesForActivities(StravaXApi, args);
                         break;
                         default:
                             throw new ArgumentException($"command for {exec_cmd} is not defined.");
@@ -174,9 +174,9 @@ namespace Prototype
                 builder
                     .AddFilter("Microsoft", Microsoft.Extensions.Logging.LogLevel.Warning)
                     .AddFilter("System", Microsoft.Extensions.Logging.LogLevel.Warning)
-                    .AddFilter("Prototype.StravaXApi", Microsoft.Extensions.Logging.LogLevel.Information)
+                    .AddFilter("Strava.XApi.StravaXApi", Microsoft.Extensions.Logging.LogLevel.Information)
                     .AddFilter("StravaXApi", Microsoft.Extensions.Logging.LogLevel.Information)
-                    .AddProvider(new Prototype.Tools.CustomLoggerProvider()); // Color and Multi-Line output are not optimal for cloud container logs.
+                    .AddProvider(new Strava.XApi.Tools.CustomLoggerProvider()); // Color and Multi-Line output are not optimal for cloud container logs.
                     //.AddConsole();
                     //.AddEventLog();
             });

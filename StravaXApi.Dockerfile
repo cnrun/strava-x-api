@@ -8,14 +8,14 @@ FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
 WORKDIR /app
 
 # copy csproj and restore as distinct layers
-COPY Prototype/*.csproj ./Prototype/
-WORKDIR /app/Prototype
+COPY StravaXApi/*.csproj ./StravaXApi/
+WORKDIR /app/StravaXApi
 RUN dotnet restore
 
 # copy and publish app and libraries
 WORKDIR /app/
-COPY Prototype/. ./Prototype/
-WORKDIR /app/Prototype
+COPY StravaXApi/. ./StravaXApi/
+WORKDIR /app/StravaXApi
 RUN dotnet publish -c Release -o out
 
 # test application -- see: dotnet-docker-unit-testing.md
@@ -26,5 +26,5 @@ RUN dotnet publish -c Release -o out
 
 FROM mcr.microsoft.com/dotnet/core/runtime:3.1 AS runtime
 WORKDIR /app
-COPY --from=build /app/Prototype/out ./
-ENTRYPOINT ["dotnet", "Prototype.dll"]
+COPY --from=build /app/StravaXApi/out ./
+ENTRYPOINT ["dotnet", "StravaXApi.dll"]

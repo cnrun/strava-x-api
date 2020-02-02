@@ -1,10 +1,10 @@
 using System;
 using System.Linq;
-using Prototype.Model;
+using Strava.XApi.Model;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace Prototype.Tools
+namespace Strava.XApi.Tools
 {    
     public class QueriesGenerator
     {
@@ -19,7 +19,7 @@ namespace Prototype.Tools
                 {
                     // https://docs.microsoft.com/en-us/ef/ef6/querying/
                     // First retrieve all query objects to avoid "New transaction is not allowed because there are other threads running in the session."
-                    // Not best praxis but enought for Prototype.
+                    // Not best praxis but enought for Strava.XApi.
                     IList<AthleteShort> AllAthletes = db.AthleteShortDB.ToList();
                     Stopwatch stopWatch = new Stopwatch();
                     stopWatch.Start();

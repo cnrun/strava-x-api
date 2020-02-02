@@ -15,7 +15,7 @@ using Microsoft.EntityFrameworkCore;
 //      Das Tool "dotnet-ef" (Version 3.0.0) wurde erfolgreich installiert.
 // 3) dotnet add package Microsoft.EntityFrameworkCore.Design
 //      ...
-//      log  : Wiederherstellung in "1,83 sec" für "/Users/ericlouvard/Documents/Projects/strava-x-api/Prototype/Prototype.csproj" abgeschlossen.
+//      log  : Wiederherstellung in "1,83 sec" für " ... /strava-x-api/Prototype/Strava.XApi.csproj" abgeschlossen.
 // 4) dotnet ef migrations add InitialCreate
 //      Done. To undo this action, use 'ef migrations remove'
 // 5) dotnet ef database update
@@ -47,7 +47,7 @@ using Microsoft.EntityFrameworkCore;
 //      VALUES ('20191028211236_InitialCreate', '3.0.0');
 //      Done.
 
-namespace Prototype.Model
+namespace Strava.XApi.Model
 {    
     public class StravaXApiContext : DbContext
     {

@@ -5,7 +5,7 @@ using System.Linq;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 
-namespace Prototype.Model
+namespace Strava.XApi.Model
 {    
     public class ActivityShort
     {

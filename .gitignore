@@ -340,3 +340,13 @@ Prototype/misc/sql/rename_table.sql
 Prototype/maps
 Prototype/images
 Prototype/gpx
+Strava.XApi/screenshots/*
+Strava.XApi/Migrations/*
+Strava.XApi/*.db
+Strava.XApi/data
+Strava.XApi/misc/delivery/Azure.el*.azcli
+Strava.XApi/misc/sql/create_user.sql
+Strava.XApi/misc/sql/rename_table.sql
+Strava.XApi/maps
+Strava.XApi/images
+Strava.XApi/gpx

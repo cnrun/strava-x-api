@@ -1,4 +1,4 @@
-namespace Prototype.Model
+namespace Strava.XApi.Model
 {    
     /// <summary>
     /// The type of an activity.

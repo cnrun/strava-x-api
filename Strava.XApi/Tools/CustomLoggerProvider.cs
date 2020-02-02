@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 using System;
-namespace Prototype.Tools
+namespace Strava.XApi.Tools
 {    
     // take from https://stackoverflow.com/a/44231390/281188
     public class CustomLoggerProvider : ILoggerProvider

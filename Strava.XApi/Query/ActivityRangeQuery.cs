@@ -1,11 +1,11 @@
 using System;
 using System.Text.Json;
 using System.ComponentModel.DataAnnotations;
-using Prototype.Model;
+using Strava.XApi.Model;
 using System.ComponentModel.DataAnnotations.Schema;
 
 
-namespace Prototype.Model
+namespace Strava.XApi.Model
 {    
     public class ActivityRangeQuery
     {

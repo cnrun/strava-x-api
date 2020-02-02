@@ -1,10 +1,10 @@
 using System;
 using System.Linq;
-using Prototype.Model;
+using Strava.XApi.Model;
 using Microsoft.EntityFrameworkCore;
 using NDesk.Options;
 
-namespace Prototype.Tools
+namespace Strava.XApi.Tools
 {    
     public class DbClone
     {

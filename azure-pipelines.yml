@@ -22,10 +22,10 @@ steps:
 # https://github.com/dotnet/cli/issues/8368#issuecomment-424852996
 # https://github.com/ignatandrei/stankins/blob/master/azure-pipelines.yml
 - script: |
-    cd Prototype
+    cd Strava.XApi
     dotnet tool install --tool-path . dotnet-ef  --version 3.1.0
-    ./dotnet-ef --project ./Prototype.csproj migrations add InitialCreate    
-    ./dotnet-ef --project ./Prototype.csproj database update
+    ./dotnet-ef --project ./StravaXApi.csproj migrations add InitialCreate    
+    ./dotnet-ef --project ./StravaXApi.csproj database update
     ls -alrt
   env:
     CONNECTION_STRING: $(CONNECTION_STRING)
@@ -40,7 +40,7 @@ steps:
     # ./data directory must exists.
     projects: '**/*.csproj'
     arguments: '-c=init'
-    workingDirectory: 'Prototype/'
+    workingDirectory: 'Strava.XApi/'
 # call API
 # https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/build/dotnet-core-cli?view=azure-devops
 - task: DotNetCoreCLI@2
@@ -61,7 +61,7 @@ steps:
     # path is relative to project path, before the workingDirectory ist evaluated
     projects: '**/*.csproj'
     arguments: '-- -c=get-activities -athleteid=144100'
-    workingDirectory: 'Prototype/'
+    workingDirectory: 'Strava.XApi/'
 # retrieve db stats
 - task: DotNetCoreCLI@2
   env:
@@ -72,4 +72,4 @@ steps:
     # path is relative to project path, before the workingDirectory ist evaluated
     projects: '**/*.csproj'
     arguments: '-c=stats'
-    workingDirectory: 'Prototype/'
+    workingDirectory: 'Strava.XApi/'

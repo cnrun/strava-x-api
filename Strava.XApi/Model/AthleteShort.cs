@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using System.Collections.Generic;
 
-namespace Prototype.Model
+namespace Strava.XApi.Model
 {    
     public class AthleteShort
     {

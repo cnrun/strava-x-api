@@ -1,6 +1,6 @@
-using Prototype.Model;
+using Strava.XApi.Model;
 
-namespace Prototype.Tools
+namespace Strava.XApi.Tools
 {    
     public class DbInit
     {

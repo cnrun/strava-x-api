@@ -1,7 +1,7 @@
 using System;
 using System.Text.Json;
 
-namespace Prototype.Model
+namespace Strava.XApi.Model
 {    
     public class AthleteConnection
     {

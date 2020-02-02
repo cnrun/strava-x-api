@@ -2,12 +2,12 @@ using System;
 using System.Linq;
 using System.Net;
 using System.IO;
-using Prototype.Model;
+using Strava.XApi.Model;
 using System.Collections.Generic;
 using NDesk.Options;
 using Microsoft.Extensions.Logging;
 
-namespace Prototype.Tools
+namespace Strava.XApi.Tools
 {    
     public class ImageDownloader
     {
@@ -18,7 +18,7 @@ namespace Prototype.Tools
                 builder
                     .AddFilter("Microsoft", Microsoft.Extensions.Logging.LogLevel.Warning)
                     .AddFilter("System", Microsoft.Extensions.Logging.LogLevel.Warning)
-                    .AddFilter("Prototype.Tools.ImageDownloader", Microsoft.Extensions.Logging.LogLevel.Debug)
+                    .AddFilter("Strava.XApi.Tools.ImageDownloader", Microsoft.Extensions.Logging.LogLevel.Debug)
                     .AddFilter("StravaXApi", Microsoft.Extensions.Logging.LogLevel.Information)
                     .AddProvider(new CustomLoggerProvider());
                     //.AddEventLog();

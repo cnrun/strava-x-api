@@ -3,10 +3,10 @@ using NDesk.Options;
 using Microsoft.Extensions.Logging;
 using System.Linq;
 using System.IO;
-using Prototype.Model;
+using Strava.XApi.Model;
 using System.Collections.Generic;
 
-namespace Prototype.Tools
+namespace Strava.XApi.Tools
 {    
     public class GpxDownloader
     {
@@ -17,7 +17,7 @@ namespace Prototype.Tools
                 builder
                     .AddFilter("Microsoft", Microsoft.Extensions.Logging.LogLevel.Warning)
                     .AddFilter("System", Microsoft.Extensions.Logging.LogLevel.Warning)
-                    .AddFilter("Prototype.Tools.GpxDownloader", Microsoft.Extensions.Logging.LogLevel.Debug)
+                    .AddFilter("Strava.XApi.Tools.GpxDownloader", Microsoft.Extensions.Logging.LogLevel.Debug)
                     .AddFilter("StravaXApi", Microsoft.Extensions.Logging.LogLevel.Information)
                     .AddProvider(new CustomLoggerProvider());
                     //.AddEventLog();

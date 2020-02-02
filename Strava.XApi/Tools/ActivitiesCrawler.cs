@@ -2,11 +2,11 @@ using System;
 using System.Threading;
 using System.Linq;
 using OpenQA.Selenium;
-using Prototype.Model;
+using Strava.XApi.Model;
 using NDesk.Options;
 using System.Collections.Generic;
 
-namespace Prototype.Tools
+namespace Strava.XApi.Tools
 {    
     public class ActivitiesCrawler
     {
