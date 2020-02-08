@@ -5,6 +5,7 @@ using Strava.XApi.Model;
 using System.Collections.Generic;
 using NDesk.Options;
 using Microsoft.Extensions.Logging;
+using System.Text.RegularExpressions;
 
 namespace Strava.XApi.Tools
 {    
@@ -34,6 +35,7 @@ namespace Strava.XApi.Tools
             string AthleteId=null;
             string ActivityTypeStr=null;
             bool doAthleteStats=false;
+            string doRenewMonth=null;
             var p = new OptionSet () {
                 { "g|garbage",   v => { doGarbage=true; } },
                 { "a|all",   v => { doAll=true; } },
@@ -43,6 +45,7 @@ namespace Strava.XApi.Tools
                 { "aid|athleteid=",   v => { AthleteId=v; } },
                 { "at|activity_type=",   v => { ActivityTypeStr=v; } },
                 { "as|athlete-stats",   v => { doAthleteStats=true; } },
+                { "m|renew-month=",   v => { doRenewMonth=v; } },
             };
             p.Parse(args);
 
@@ -91,6 +94,25 @@ namespace Strava.XApi.Tools
                         }
                     }
 
+                    if (doRenewMonth!=null)
+                    {
+                        // set all DONE queries for the given month to Created                         
+                        var match = Regex.Match(doRenewMonth,"([0-9]{4})/([0-9]{2})");
+
+                        int year=Int32.Parse(match.Groups[1].Value);
+                        int month=Int32.Parse(match.Groups[2].Value);
+                        var statusDone = db.ActivityQueriesDB.Where(a => a.Status==QueryStatus.Done && a.DateFrom==new DateTime(year,month,01));
+                        foreach(ActivityRangeQuery arq in statusDone.ToList())
+                        {
+                            arq.Status=QueryStatus.Created;
+                            arq.StatusChanged=DateTime.Now;
+                            arq.Message=$"reset for {year}/{month} from {QueryStatus.Run} to {QueryStatus.Created}";
+                            logger.LogInformation($"query for {year}/{month} with {QueryStatus.Done} {arq.AthleteId} {arq.Message}");
+                        }
+                        logger.LogInformation($"begin: save changes");
+                        db.SaveChanges();
+                        logger.LogInformation($"done: save changes");
+                    }
                     if (doGarbage)
                     {
                         {
