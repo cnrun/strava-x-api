@@ -113,6 +113,27 @@ namespace Strava.XApi.Tools
                         }
                     }
                 }
+                else if (! doGpx)
+                {
+                    int countToDownload=0;
+                    int countDownloaded=0;
+                    foreach(ActivityShort activity in activities)
+                    {
+                        // logger.LogInformation($"activity {activity.StatShortString} -> {Utils.extractActivityTime(activity)}.");
+                        string outputDir=$"gpx/{activity.AthleteId}";
+                        // fi.MoveTo($"{fi.Directory.FullName}/{ActivityId}_{fi.Name}");
+                        string outputFilename=$"{activity.ActivityId}_{activity.AthleteId}.gpx";
+                        if (!File.Exists($"{outputDir}/{outputFilename}"))
+                        {
+                            countToDownload++;
+                        }
+                        else
+                        {
+                            countDownloaded++;
+                        }
+                    }
+                    logger.LogInformation($"GPX Track to download:{countToDownload} already downloaded:{countDownloaded}");
+                }
                 logger.LogInformation($"DONE GPX Download {countDownload} (skipped: {countSkipped})for {(AthleteId==null?"all athletes":AthleteId)}/{(ActivityTypeStr==null?"all types":ActivityTypeStr)} :{activities.Count()}");
             }
             catch(Exception e)
