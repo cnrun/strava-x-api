@@ -15,7 +15,7 @@ namespace Strava.XApi.Tools
         /**
          * Convert GPX files to KML.
          * GPX File should have bee retrieved with get-gpx.
-         * All GPX would be merged in one KML file with subfolder for athlete and activity types.
+         * All GPX are merged in one KML file with subfolder for athlete and activity types.
          */
         public static int Convert(string[] args)
         {
@@ -76,7 +76,7 @@ namespace Strava.XApi.Tools
                     int Count=0;
                     // go throw all activities, sorted by athlete / activity type / activity date
                     foreach(ActivityShort activity in activities)
-                    {
+                    {                        
                         if (lastAthleteId==null)
                         {
                             // first round init athlete
@@ -133,7 +133,10 @@ namespace Strava.XApi.Tools
                         {
                             try
                             {
-                                XElement GpxToKmlElt = readGpx(activity, $"{outputDir}/{outputFilename}",kml);
+                                // for heatmap without time.
+                                // XElement GpxToKmlElt = readGpx(activity, $"{outputDir}/{outputFilename}",kml);
+                                // for heatmap with time.
+                                XElement GpxToKmlElt = convertToKmlWithTime(activity, $"{outputDir}/{outputFilename}",kml,gx);                                
                                 currentActivityTypeFolder.Add(GpxToKmlElt);
                             }
                             catch(Exception)
@@ -152,8 +155,8 @@ namespace Strava.XApi.Tools
                         new XElement(kml+"kml"
                         ,new XAttribute("xmlns", kml)
                         ,new XAttribute(XNamespace.Xmlns+"gx",gx)
-                        ,new XAttribute(XNamespace.Xmlns + "kml", kml)
-                        ,new XAttribute(XNamespace.Xmlns + "atom", atom)
+                        ,new XAttribute(XNamespace.Xmlns+"kml", kml)
+                        ,new XAttribute(XNamespace.Xmlns+"atom", atom)
                         ,StravaXApiFolder));
                     kmlDoc.Save("/Users/ericlouvard/Downloads/StravaXApi.kml");
                 }
@@ -187,6 +190,7 @@ namespace Strava.XApi.Tools
                 if (sb.Length>0) sb.Append(" ");
                 sb.Append($"{lon},{lat},{ele}");
             }
+
             var kmlGpxDocument = new XElement(kml+"Document"
                 ,new XElement(kml+"name", activity.ActivityTitle)
                 ,new XElement(kml+"Style", new XAttribute("id","lineStyle")
@@ -200,6 +204,82 @@ namespace Strava.XApi.Tools
                     ,new XElement(kml+"LineString",
                         new XElement(kml+"tessellate","1"),
                         new XElement(kml+"coordinates",sb.ToString())
+            )));
+            return kmlGpxDocument;
+
+        }
+        public static XElement convertToKmlWithTime(ActivityShort activity, string filepath,XNamespace kml,XNamespace gx)
+        {
+            XDocument gpxDoc = XDocument.Load(filepath);
+            
+            XNamespace ns = "{http://www.topografix.com/GPX/1/1}";
+            var gpxElt=gpxDoc.Root;
+            var trkptElts=gpxElt.Element($"{ns}trk").Element($"{ns}trkseg").Elements();
+
+            List<XElement> whenList = new List<XElement>();
+            List<XElement> coordList = new List<XElement>();
+
+            // start time of the activity
+            var startTime = activity.ActivityDate;
+            // end time of the activity
+            var activityTime = Utils.extractActivityTime(activity);
+            var endTime = activity.ActivityDate.Add(activityTime);
+
+            int pointCount=trkptElts.Count();
+            // double deltaTimeMs = (activityTime.Milliseconds);
+            int currentPointIndex=1;
+            foreach (XElement element in trkptElts)
+            {
+                // Console.WriteLine($" {element}");
+                var lat=element.Attribute("lat").Value;
+                var lon=element.Attribute("lon").Value;
+                var ele=element.Element($"{ns}ele").Value;
+
+                // 2020-02-09T11:45:03Z
+                var whenPoint = startTime.AddSeconds(((double)activityTime.TotalSeconds)*((double)currentPointIndex/(double)pointCount));
+                XElement whendElt = new XElement(kml+"when",whenPoint.ToString("yyyy-MM-ddTHH:mm:ssZ"));                
+                whenList.Add(whendElt);
+
+                XElement coordElt = new XElement(gx+"coord",$"{lon} {lat} {ele}");                
+                coordList.Add(coordElt);
+                currentPointIndex++;
+            }
+
+            var kmlGpxDocument = new XElement(kml+"Document"
+                ,new XElement(kml+"name", activity.ActivityTitle)
+                ,new XElement(kml+"Style", new XAttribute("id","multiTrack_h")
+                    ,new XElement(kml+"IconStyle",
+                        new XElement(kml+"scale","1.2"),
+                        new XElement(kml+"Icon",
+                            new XElement(kml+"href","http://earth.google.com/images/kml-icons/track-directional/track-0.png")))
+                    ,new XElement(kml+"LineStyle",
+                        new XElement(kml+"color","99ffac59"),
+                        new XElement(kml+"width","8" )
+                ))
+                ,new XElement(kml+"StyleMap", new XAttribute("id","multiTrack")
+                    ,new XElement(kml+"Pair",
+                        new XElement(kml+"key","normal"),
+                        new XElement(kml+"styleUrl","#multiTrack_n")
+                    )
+                    ,new XElement(kml+"Pair",
+                        new XElement(kml+"key","highlight"),
+                        new XElement(kml+"styleUrl","#multiTrack_h")
+                    )
+                )
+                ,new XElement(kml+"Style", new XAttribute("id","multiTrack_n")
+                    ,new XElement(kml+"IconStyle",
+                        new XElement(kml+"Icon",
+                            new XElement(kml+"href","http://earth.google.com/images/kml-icons/track-directional/track-0.png")))
+                    ,new XElement(kml+"LineStyle",
+                        new XElement(kml+"color","99ffac59"),
+                        new XElement(kml+"width","6" )
+                ))
+                ,new XElement(kml+"Placemark"
+                    ,new XElement(kml+"name",activity.ActivityTitle)
+                    ,new XElement(kml+"styleUrl","#multiTrack")
+                    ,new XElement(gx+"Track",
+                        whenList,
+                        coordList
             )));
             return kmlGpxDocument;
 
