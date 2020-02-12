@@ -91,7 +91,10 @@ namespace Strava.XApi.Model
             else
             {
                 // i.e. ""Server=tcp:strava-x-api.database.windows.net,1433;Initial Catalog=StravaActivityDB;Persist Security Info=False;User ID=-----;Password=------;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;""
-                options.UseSqlServer(ConnectionString, x=>x.MigrationsHistoryTable("__StravaXApiMigrationsHistory", SchemaName));
+                options.UseSqlServer(ConnectionString,  x=>{ 
+                    x.MigrationsHistoryTable("__StravaXApiMigrationsHistory", SchemaName);
+                    x.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
+                });
             }
         }
 

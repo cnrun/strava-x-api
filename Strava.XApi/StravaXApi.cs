@@ -420,7 +420,7 @@ namespace Strava.XApi
                         }
                         else
                         {
-                            logger.LogInformation($"FOUND file: {fi} {fi.Name} Rename {fi} to {destFilepath}");                    
+                            logger.LogInformation($"downloaded: {fi}>{destFilepath}");                    
                             WaitDownload=false;
                             try{
                                 fi.MoveTo(destFilepath);

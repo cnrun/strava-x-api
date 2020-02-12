@@ -9,7 +9,13 @@ using System.Linq;
 using System;
 
 namespace Strava.XApi.Tools
-{    
+{
+    enum ExportType
+    {
+        HeatMap,
+        TimeMap
+    }
+
     public class GpxToKml
     {
         /**
@@ -34,12 +40,18 @@ namespace Strava.XApi.Tools
             string AthleteId = null;
             // default for now
             string ActivityTypeStr = ActivityType.BackcountrySki.ToString();
+            string exportTypeStr = ExportType.HeatMap.ToString();
+            string beginDateStr = null;
             var p = new OptionSet () {
                 { "a|athleteid=",   v => { AthleteId=v; } },
                 { "at|activity_type=",   v => { ActivityTypeStr=v; } },
+                { "e|export_type=",   v => { exportTypeStr=v; } },
+                { "d|begin_date=",   v => { beginDateStr=v; } },
             };
             p.Parse(args);
             int ret = -1;
+
+            var exportType=Enum.Parse(typeof(ExportType), exportTypeStr);
 
             XNamespace gx="http://www.google.com/kml/ext/2.2";
             XNamespace kml = "http://www.opengis.net/kml/2.2";
@@ -60,11 +72,17 @@ namespace Strava.XApi.Tools
                     {
                         dbs=dbs.Where(a => a.AthleteId==AthleteId);
                     }
+                    if (beginDateStr!=null)
+                    {
+                        DateTime dateTime=DateTime.Parse(beginDateStr);
+                        Console.WriteLine($"filter for date {dateTime}");
+                        dbs=dbs.Where(a => a.ActivityDate>=dateTime);
+                    }
                     // Ignore Activities without image map. They have probably been enterred without gps-track.
                     dbs=dbs.Where(a => a.ActivityImageMapUrl!=null);
                     activities = dbs.ToList();
 
-                    logger.LogInformation($"BEGIN GPX➡️KML {(AthleteId==null?"all athletes":AthleteId)}/{(ActivityTypeStr==null?"all types":ActivityTypeStr)} :{activities.Count()}");
+                    logger.LogInformation($"BEGIN GPX➡️KML {(AthleteId==null?"all athletes":AthleteId)}/{(ActivityTypeStr==null?"all types":ActivityTypeStr)}/{(beginDateStr==null?"all dates":DateTime.Parse(beginDateStr).ToString())} :{activities.Count()}");
                     string lastAthleteId=null;
                     ActivityType lastActivityType=ActivityType.Other;
                     XElement StravaXApiFolder=new XElement(kml+"Folder"
@@ -75,15 +93,17 @@ namespace Strava.XApi.Tools
                     XElement currentActivityTypeFolder=null;
                     int Count=0;
                     // go throw all activities, sorted by athlete / activity type / activity date
+                    // <visibility>0</visibility>
                     foreach(ActivityShort activity in activities)
-                    {                        
+                    {
                         if (lastAthleteId==null)
                         {
                             // first round init athlete
-                            AthleteShort athlete = db.AthleteShortDB.Find(activity.AthleteId);                    
+                            AthleteShort athlete = db.AthleteShortDB.Find(activity.AthleteId);
                             string athleteName=athlete.AthleteName;
                             currentAthleteFolder=new XElement(kml+"Folder"
                                 ,new XElement(kml+"name",athleteName)
+                                ,new XElement(kml+"visibility","0")
                                 ,new XElement(kml+"open","0"));
                             StravaXApiFolder.Add(currentAthleteFolder);
                             lastAthleteId=activity.AthleteId;
@@ -112,10 +132,11 @@ namespace Strava.XApi.Tools
                             else
                             {
                                 // start a new athlete folder
-                                AthleteShort athlete = db.AthleteShortDB.Find(activity.AthleteId);                    
+                                AthleteShort athlete = db.AthleteShortDB.Find(activity.AthleteId);
                                 string athleteName=athlete.AthleteName;
                                 currentAthleteFolder=new XElement(kml+"Folder"
                                     ,new XElement(kml+"name",athleteName)
+                                    ,new XElement(kml+"visibility","0")
                                     ,new XElement(kml+"open","0"));
                                 StravaXApiFolder.Add(currentAthleteFolder);
                                 // start a new activity folder
@@ -133,15 +154,25 @@ namespace Strava.XApi.Tools
                         {
                             try
                             {
-                                // for heatmap without time.
-                                // XElement GpxToKmlElt = readGpx(activity, $"{outputDir}/{outputFilename}",kml);
-                                // for heatmap with time.
-                                XElement GpxToKmlElt = convertToKmlWithTime(activity, $"{outputDir}/{outputFilename}",kml,gx);                                
+                                XElement GpxToKmlElt;
+                                switch(exportType)
+                                {
+                                    case ExportType.HeatMap:
+                                        // for heatmap without time.
+                                        GpxToKmlElt = readGpx(activity, $"{outputDir}/{outputFilename}",kml);
+                                        break;
+                                    case ExportType.TimeMap:
+                                        // for heatmap with time.
+                                        GpxToKmlElt = convertToKmlWithTime(activity, $"{outputDir}/{outputFilename}",kml,gx);
+                                        break;
+                                    default:
+                                        throw new System.InvalidOperationException($"Export type not supported {exportType}");
+                                }
                                 currentActivityTypeFolder.Add(GpxToKmlElt);
                             }
                             catch(Exception)
                             {
-                               logger.LogWarning($"SKIP: {outputFilename} {lastAthleteId} {lastActivityType}"); 
+                               logger.LogWarning($"SKIP: {outputFilename} {lastAthleteId} {lastActivityType}");
                             }
                             // Console.WriteLine($"add GPX to {outputFilename} {lastAthleteId} {lastActivityType}");
                         }
@@ -164,7 +195,7 @@ namespace Strava.XApi.Tools
             }
             catch(Exception e)
             {
-                logger.LogError($"ERROR:{e.ToString()}");  
+                logger.LogError($"ERROR:{e.ToString()}");
                 ret = 1;
             }
             return ret;
@@ -176,7 +207,7 @@ namespace Strava.XApi.Tools
         public static XElement readGpx(ActivityShort activity, string filepath,XNamespace kml)
         {
             XDocument gpxDoc = XDocument.Load(filepath);
-            
+
             XNamespace ns = "{http://www.topografix.com/GPX/1/1}";
             var gpxElt=gpxDoc.Root;
             var trkptElts=gpxElt.Element($"{ns}trk").Element($"{ns}trkseg").Elements();
@@ -200,6 +231,7 @@ namespace Strava.XApi.Tools
                 ))
                 ,new XElement(kml+"Placemark"
                     ,new XElement(kml+"name","Path")
+                    ,new XElement(kml+"visibility","0")
                     ,new XElement(kml+"styleUrl","#lineStyle")
                     ,new XElement(kml+"LineString",
                         new XElement(kml+"tessellate","1"),
@@ -211,7 +243,7 @@ namespace Strava.XApi.Tools
         public static XElement convertToKmlWithTime(ActivityShort activity, string filepath,XNamespace kml,XNamespace gx)
         {
             XDocument gpxDoc = XDocument.Load(filepath);
-            
+
             XNamespace ns = "{http://www.topografix.com/GPX/1/1}";
             var gpxElt=gpxDoc.Root;
             var trkptElts=gpxElt.Element($"{ns}trk").Element($"{ns}trkseg").Elements();
@@ -237,10 +269,10 @@ namespace Strava.XApi.Tools
 
                 // 2020-02-09T11:45:03Z
                 var whenPoint = startTime.AddSeconds(((double)activityTime.TotalSeconds)*((double)currentPointIndex/(double)pointCount));
-                XElement whendElt = new XElement(kml+"when",whenPoint.ToString("yyyy-MM-ddTHH:mm:ssZ"));                
+                XElement whendElt = new XElement(kml+"when",whenPoint.ToString("yyyy-MM-ddTHH:mm:ssZ"));
                 whenList.Add(whendElt);
 
-                XElement coordElt = new XElement(gx+"coord",$"{lon} {lat} {ele}");                
+                XElement coordElt = new XElement(gx+"coord",$"{lon} {lat} {ele}");
                 coordList.Add(coordElt);
                 currentPointIndex++;
             }
@@ -276,6 +308,7 @@ namespace Strava.XApi.Tools
                 ))
                 ,new XElement(kml+"Placemark"
                     ,new XElement(kml+"name",activity.ActivityTitle)
+                    ,new XElement(kml+"visibility","0")
                     ,new XElement(kml+"styleUrl","#multiTrack")
                     ,new XElement(gx+"Track",
                         whenList,
