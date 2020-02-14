@@ -347,6 +347,7 @@ Strava.XApi/data
 Strava.XApi/misc/delivery/Azure.el*.azcli
 Strava.XApi/misc/sql/create_user.sql
 Strava.XApi/misc/sql/rename_table.sql
+Strava.XApi/misc/protocol/24-hours-test.md
 Strava.XApi/maps
 Strava.XApi/images
 Strava.XApi/gpx

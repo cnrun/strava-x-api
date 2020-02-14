@@ -80,7 +80,8 @@ namespace Strava.XApi.Tools
                             string outputDir=$"gpx/{activity.AthleteId}";
                             // fi.MoveTo($"{fi.Directory.FullName}/{ActivityId}_{fi.Name}");
                             string outputFilename=$"{activity.ActivityId}_{activity.AthleteId}.gpx";
-                            if (!File.Exists($"{outputDir}/{outputFilename}"))
+                            string outputFilenameGZip=$"{outputFilename}.gz";
+                            if (!File.Exists($"{outputDir}/{outputFilename}") && !File.Exists($"{outputDir}/{outputFilenameGZip}"))
                             {
                                 if (!Directory.Exists(outputDir))
                                 {
@@ -89,7 +90,7 @@ namespace Strava.XApi.Tools
                                 }
                                 try
                                 {
-                                    stravaXApi.getActivityGpxSelenium(activity.ActivityId,$"{outputDir}/{outputFilename}");
+                                    stravaXApi.getActivityGpxSelenium(activity.ActivityId,$"{outputDir}/{outputFilenameGZip}");
                                     countDownload++;
                                 }
                                 catch(PrivateGpxException e)

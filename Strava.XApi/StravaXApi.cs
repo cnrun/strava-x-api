@@ -10,6 +10,7 @@ using OpenQA.Selenium.Remote;
 using System.Security;
 using Strava.XApi.Model;
 using System.Collections.Generic;
+using System.IO.Compression;
 using NDesk.Options;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
@@ -352,6 +353,7 @@ namespace Strava.XApi
             return WarningMessage;
         }
 
+        // destFilepath if filename ends with .gz, output will be compressed
         public void getActivityGpxSelenium(String ActivityId, String destFilepath)
         {
             String url = $"https://www.strava.com/activities/{ActivityId}/export_gpx";
@@ -420,10 +422,27 @@ namespace Strava.XApi
                         }
                         else
                         {
-                            logger.LogInformation($"downloaded: {fi}>{destFilepath}");                    
+                            logger.LogInformation($"downloaded: {fi}→{destFilepath}");                    
                             WaitDownload=false;
                             try{
-                                fi.MoveTo(destFilepath);
+                                if (destFilepath.ToLower().EndsWith(".gz"))
+                                {
+                                    using (FileStream originalFileStream = fi.OpenRead())
+                                    {
+                                        using (FileStream compressedFileStream = File.Create(destFilepath))
+                                        {
+                                            using (GZipStream compressionStream = new GZipStream(compressedFileStream, CompressionMode.Compress))
+                                            {
+                                                originalFileStream.CopyTo(compressionStream);
+                                            }
+                                        }
+                                    }
+                                    fi.Delete();
+                                }
+                                else
+                                {
+                                    fi.MoveTo(destFilepath);
+                                }
                             }
                             catch(FileNotFoundException)
                             {
