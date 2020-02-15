@@ -81,7 +81,8 @@ namespace Strava.XApi.Tools
                             // fi.MoveTo($"{fi.Directory.FullName}/{ActivityId}_{fi.Name}");
                             string outputFilename=$"{activity.ActivityId}_{activity.AthleteId}.gpx";
                             string outputFilenameGZip=$"{outputFilename}.gz";
-                            if (!File.Exists($"{outputDir}/{outputFilename}") && !File.Exists($"{outputDir}/{outputFilenameGZip}"))
+                            string outputFilenameErr=$"{outputFilename}.err";
+                            if (!File.Exists($"{outputDir}/{outputFilename}") && !File.Exists($"{outputDir}/{outputFilenameGZip}") && !File.Exists($"{outputDir}/{outputFilenameErr}"))
                             {
                                 if (!Directory.Exists(outputDir))
                                 {
@@ -97,7 +98,7 @@ namespace Strava.XApi.Tools
                                 {
                                     logger.LogDebug($"GPX Track private for {activity.AthleteId}: {e.ActivityId} {e.Message}");
                                     // Write error file
-                                    using (StreamWriter outputFile = new StreamWriter(Path.Combine(outputDir, outputFilename)))
+                                    using (StreamWriter outputFile = new StreamWriter(Path.Combine(outputDir, outputFilenameErr)))
                                     {
                                         outputFile.WriteLine($"Error while downloading GPX for athlete:{activity.AthleteId} activity{activity.ActivityId}");
                                         outputFile.WriteLine($"{e.Message}");

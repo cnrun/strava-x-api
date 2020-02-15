@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using System.Xml.Linq;
 using System.Text;
 using System.IO;
+using System.IO.Compression;
 using System.Collections.Generic;
 using System.Linq;
 using System;
@@ -18,6 +19,10 @@ namespace Strava.XApi.Tools
 
     public class GpxToKml
     {
+
+        private static XNamespace gx="http://www.google.com/kml/ext/2.2";
+        private static XNamespace kml = "http://www.opengis.net/kml/2.2";
+        private static XNamespace atom = "http://www.w3.org/2005/Atom";
         /**
          * Convert GPX files to KML.
          * GPX File should have bee retrieved with get-gpx.
@@ -39,23 +44,21 @@ namespace Strava.XApi.Tools
             logger.LogDebug("Log GpxToKml");
             string AthleteId = null;
             // default for now
-            string ActivityTypeStr = ActivityType.BackcountrySki.ToString();
+            string ActivityTypeStr = null;
+            string exportKmlPath = "StravaXApi.kml";
             string exportTypeStr = ExportType.HeatMap.ToString();
             string beginDateStr = null;
             var p = new OptionSet () {
                 { "a|athleteid=",   v => { AthleteId=v; } },
                 { "at|activity_type=",   v => { ActivityTypeStr=v; } },
                 { "e|export_type=",   v => { exportTypeStr=v; } },
-                { "d|begin_date=",   v => { beginDateStr=v; } },
+                { "bd|begin_date=",   v => { beginDateStr=v; } },
+                { "d|destination=",   v => { exportKmlPath=v; } },
             };
             p.Parse(args);
             int ret = -1;
 
-            var exportType=Enum.Parse(typeof(ExportType), exportTypeStr);
-
-            XNamespace gx="http://www.google.com/kml/ext/2.2";
-            XNamespace kml = "http://www.opengis.net/kml/2.2";
-            XNamespace atom = "http://www.w3.org/2005/Atom";
+            ExportType exportType=(ExportType)Enum.Parse(typeof(ExportType), exportTypeStr);
 
             try
             {
@@ -150,32 +153,39 @@ namespace Strava.XApi.Tools
 
                         string outputDir=$"gpx/{activity.AthleteId}";
                         string outputFilename=$"{activity.ActivityId}_{activity.AthleteId}.gpx";
-                        if (File.Exists($"{outputDir}/{outputFilename}"))
+                        string outputFilenameGz=$"{activity.ActivityId}_{activity.AthleteId}.gpx.gz";
+                        string outputFilenameErr=$"{activity.ActivityId}_{activity.AthleteId}.err";
+
+                        try
                         {
-                            try
+                            if (File.Exists($"{outputDir}/{outputFilenameGz}"))
                             {
-                                XElement GpxToKmlElt;
-                                switch(exportType)
+                                using(FileStream compressedFileStream = File.OpenRead($"{outputDir}/{outputFilenameGz}"))
                                 {
-                                    case ExportType.HeatMap:
-                                        // for heatmap without time.
-                                        GpxToKmlElt = readGpx(activity, $"{outputDir}/{outputFilename}",kml);
-                                        break;
-                                    case ExportType.TimeMap:
-                                        // for heatmap with time.
-                                        GpxToKmlElt = convertToKmlWithTime(activity, $"{outputDir}/{outputFilename}",kml,gx);
-                                        break;
-                                    default:
-                                        throw new System.InvalidOperationException($"Export type not supported {exportType}");
-                                }
-                                currentActivityTypeFolder.Add(GpxToKmlElt);
+                                    using (GZipStream compressionStream = new GZipStream(compressedFileStream, CompressionMode.Decompress))
+                                    {
+                                        currentActivityTypeFolder.Add(handleGpxStream(compressionStream, exportType, activity));
+                                    }
+                                } 
                             }
-                            catch(Exception)
+                            else if (File.Exists($"{outputDir}/{outputFilename}"))
                             {
-                               logger.LogWarning($"SKIP: {outputFilename} {lastAthleteId} {lastActivityType}");
+                                using(FileStream fileStream = File.OpenRead($"{outputDir}/{outputFilename}"))
+                                {
+                                    currentActivityTypeFolder.Add(handleGpxStream(fileStream, exportType, activity));
+                                } 
                             }
-                            // Console.WriteLine($"add GPX to {outputFilename} {lastAthleteId} {lastActivityType}");
+                            else if (File.Exists($"{outputDir}/{outputFilenameErr}"))
+                            {
+                                // Skip error file.
+                                logger.LogWarning($"SKIP: GPX not availlable for {activity.ActivityId} {lastAthleteId} {lastActivityType}");
+                            }
                         }
+                        catch(Exception e)
+                        {
+                            logger.LogWarning($"SKIP: Can't parse GPX for {activity.ActivityId} {lastAthleteId} {lastActivityType} err:{e.Message}");
+                        }
+
                         if (Count++%100==0)
                         {
                             Console.WriteLine($"{Count}/{activities.Count()}");
@@ -189,7 +199,8 @@ namespace Strava.XApi.Tools
                         ,new XAttribute(XNamespace.Xmlns+"kml", kml)
                         ,new XAttribute(XNamespace.Xmlns+"atom", atom)
                         ,StravaXApiFolder));
-                    kmlDoc.Save("/Users/ericlouvard/Downloads/StravaXApi.kml");
+                    kmlDoc.Save(exportKmlPath);
+                    logger.LogInformation($"exported file at {exportKmlPath} ");
                 }
                 ret = 0;
             }
@@ -201,12 +212,31 @@ namespace Strava.XApi.Tools
             return ret;
 
         }
+
+        private static XElement handleGpxStream(Stream stream, ExportType exportType, ActivityShort activity)
+        {
+            XElement GpxToKmlElt;
+            switch(exportType)
+            {
+                case ExportType.HeatMap:
+                    // for heatmap without time.
+                    GpxToKmlElt = readGpx(activity, stream,kml);
+                    break;
+                case ExportType.TimeMap:
+                    // for heatmap with time.
+                    GpxToKmlElt = convertToKmlWithTime(activity, stream, kml, gx);
+                    break;
+                default:
+                    throw new System.InvalidOperationException($"Export type not supported {exportType}");
+            }
+            return GpxToKmlElt;
+        }
         /**
          * Extract all points from the gpx file and fill an XElement which could be integrate in the kml file.
          */
-        public static XElement readGpx(ActivityShort activity, string filepath,XNamespace kml)
+        public static XElement readGpx(ActivityShort activity, Stream stream,XNamespace kml)
         {
-            XDocument gpxDoc = XDocument.Load(filepath);
+            XDocument gpxDoc = XDocument.Load(stream);
 
             XNamespace ns = "{http://www.topografix.com/GPX/1/1}";
             var gpxElt=gpxDoc.Root;
@@ -240,9 +270,9 @@ namespace Strava.XApi.Tools
             return kmlGpxDocument;
 
         }
-        public static XElement convertToKmlWithTime(ActivityShort activity, string filepath,XNamespace kml,XNamespace gx)
+        public static XElement convertToKmlWithTime(ActivityShort activity, Stream stream,XNamespace kml,XNamespace gx)
         {
-            XDocument gpxDoc = XDocument.Load(filepath);
+            XDocument gpxDoc = XDocument.Load(stream);
 
             XNamespace ns = "{http://www.topografix.com/GPX/1/1}";
             var gpxElt=gpxDoc.Root;
