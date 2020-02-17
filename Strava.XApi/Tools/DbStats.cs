@@ -36,6 +36,9 @@ namespace Strava.XApi.Tools
             string ActivityTypeStr=null;
             bool doAthleteStats=false;
             string doRenewMonth=null;
+            bool doQueryCounts=false;
+            bool doActivityCounts=false;
+            bool doAthleteCounts=false;
             var p = new OptionSet () {
                 { "g|garbage",   v => { doGarbage=true; } },
                 { "a|all",   v => { doAll=true; } },
@@ -46,6 +49,9 @@ namespace Strava.XApi.Tools
                 { "at|activity_type=",   v => { ActivityTypeStr=v; } },
                 { "as|athlete-stats",   v => { doAthleteStats=true; } },
                 { "m|renew-month=",   v => { doRenewMonth=v; } },
+                { "cath|count-athletes",   v => { doAthleteCounts=true; } },
+                { "cq|count-queries",   v => { doQueryCounts=true; } },
+                { "cact|count-activities",   v => { doActivityCounts=true; } },
             };
             p.Parse(args);
 
@@ -54,10 +60,10 @@ namespace Strava.XApi.Tools
             {
                 using (StravaXApiContext db = new StravaXApiContext())
                 {
-                    logger.LogInformation($"Queries stored {db.ActivityQueriesDB.Count()}");
-                    logger.LogInformation($"Activities stored {db.ActivityShortDB.Count()}");
-                    var al = db.ActivityShortDB.Select(a => a.AthleteId).Distinct();
-                    logger.LogInformation($"Athletes {al.Count()} from {db.AthleteShortDB.Count()}");
+                    // logger.LogInformation($"Queries stored {db.ActivityQueriesDB.Count()}");
+                    // logger.LogInformation($"Activities stored {db.ActivityShortDB.Count()}");
+                    // var al = db.ActivityShortDB.Select(a => a.AthleteId).Distinct();
+                    // logger.LogInformation($"Athletes {al.Count()} from {db.AthleteShortDB.Count()}");
                     /*
                     foreach(var aId in al)
                     {
@@ -82,8 +88,14 @@ namespace Strava.XApi.Tools
                     }
                     */
 
+                    if (doAthleteCounts || doAll)
+                    {
+                        // output status count for queries
+                        var al = db.ActivityShortDB.Select(a => a.AthleteId).Distinct();
+                        logger.LogInformation($"Athletes {al.Count()} from {db.AthleteShortDB.Count()}");
+                    }
 
-                    if (doAll)
+                    if (doQueryCounts || doAll)
                     {
                         // output status count for queries
                         var status = db.ActivityQueriesDB.Select(a => a.Status).Distinct();
@@ -146,7 +158,7 @@ namespace Strava.XApi.Tools
                         }
                     }
 
-                    if (doAll)
+                    if (doActivityCounts || doAll)
                     {
                         // Find out athlete with open queries:
                         var qAthleteCreated = db.ActivityQueriesDB.Where(a => a.Status==QueryStatus.Created).Select(a => a.AthleteId).Distinct();    
@@ -270,16 +282,18 @@ namespace Strava.XApi.Tools
                         {
                             dbs=dbs.Where(a => a.AthleteId==AthleteId);
                         }
+
                         activities = dbs.ToList();
                         logger.LogInformation($"List activities for {(AthleteId==null?"all athletes":AthleteId)}/{(ActivityTypeStr==null?"all types":ActivityTypeStr)} :{activities.Count()}");
-
-                        if (activities.Count>0)
+                        /*
+                        if (activities.Count>0 && doActivityList)
                         {
                             foreach(ActivityShort activity in activities)
                             {
                                 logger.LogInformation($" {activity}");
                             }
                         }
+                        */
                     }
                     /*
                     {
