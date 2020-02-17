@@ -28,11 +28,13 @@ namespace Strava.XApi.Tools
             string maxCountStr = null;
             string AthleteId = null;
             string ActivityTypeStr = null;
+            string gpxDir = "gpx";
             var p = new OptionSet () {
                 { "g|gpx",   v => { doGpx=true; } },
                 { "a|athleteid=",   v => { AthleteId=v; } },
                 { "at|activity_type=",   v => { ActivityTypeStr=v; } },
                 { "m|max_count=",   v => { maxCountStr=v; } },
+                { "d|dirname=",   v => { gpxDir=v; } },
             };
             p.Parse(args);
             int ret = -1;
@@ -64,7 +66,7 @@ namespace Strava.XApi.Tools
                     bool needTracksDownload=false;
                     foreach(ActivityShort activity in activities)
                     {
-                        string outputDir=$"gpx/{activity.AthleteId}";
+                        string outputDir=$"{gpxDir}/{activity.AthleteId}";
                         string outputFilename=$"{activity.ActivityId}_{activity.AthleteId}.gpx";
                         if (!File.Exists($"{outputDir}/{outputFilename}"))
                         {
@@ -77,7 +79,7 @@ namespace Strava.XApi.Tools
                         stravaXApi.signIn();
                         foreach(ActivityShort activity in activities)
                         {
-                            string outputDir=$"gpx/{activity.AthleteId}";
+                            string outputDir=$"{gpxDir}/{activity.AthleteId}";
                             // fi.MoveTo($"{fi.Directory.FullName}/{ActivityId}_{fi.Name}");
                             string outputFilename=$"{activity.ActivityId}_{activity.AthleteId}.gpx";
                             string outputFilenameGZip=$"{outputFilename}.gz";
@@ -122,7 +124,7 @@ namespace Strava.XApi.Tools
                     foreach(ActivityShort activity in activities)
                     {
                         // logger.LogInformation($"activity {activity.StatShortString} -> {Utils.extractActivityTime(activity)}.");
-                        string outputDir=$"gpx/{activity.AthleteId}";
+                        string outputDir=$"{gpxDir}/{activity.AthleteId}";
                         // fi.MoveTo($"{fi.Directory.FullName}/{ActivityId}_{fi.Name}");
                         string outputFilename=$"{activity.ActivityId}_{activity.AthleteId}.gpx";
                         if (!File.Exists($"{outputDir}/{outputFilename}"))
@@ -137,6 +139,7 @@ namespace Strava.XApi.Tools
                     logger.LogInformation($"GPX Track to download:{countToDownload} already downloaded:{countDownloaded}");
                 }
                 logger.LogInformation($"DONE GPX Download {countDownload} (skipped: {countSkipped})for {(AthleteId==null?"all athletes":AthleteId)}/{(ActivityTypeStr==null?"all types":ActivityTypeStr)} :{activities.Count()}");
+                ret = 0;
             }
             catch(Exception e)
             {
