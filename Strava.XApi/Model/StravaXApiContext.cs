@@ -62,14 +62,14 @@ namespace Strava.XApi.Model
         {
             ignoreEnvironmentVariable = false;
             SchemaName=Environment.GetEnvironmentVariable("CONNECTION_SCHEMA");
-            this.Database.SetCommandTimeout(120);
+            this.Database.SetCommandTimeout(600);
         }
         /// constructor for clone, connection string definedin parameter.
         public StravaXApiContext(DbContextOptions options) : base(options)
         {
             ignoreEnvironmentVariable = true;
             SchemaName=Environment.GetEnvironmentVariable("CONNECTION_SCHEMA");
-            this.Database.SetCommandTimeout(120);
+            this.Database.SetCommandTimeout(600);
         }
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
