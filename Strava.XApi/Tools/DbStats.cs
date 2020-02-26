@@ -39,11 +39,13 @@ namespace Strava.XApi.Tools
             bool doQueryCounts=false;
             bool doActivityCounts=false;
             bool doAthleteCounts=false;
+            bool doListAthletes=false;
             var p = new OptionSet () {
                 { "g|garbage",   v => { doGarbage=true; } },
                 { "a|all",   v => { doAll=true; } },
                 { "act|listactivities",   v => { doActivityList=true; } },
                 { "li|listimages",   v => { doListimages=true; } },
+                { "la|listathletes",   v => { doListAthletes=true; } },
                 { "lm|listmaps",   v => { doListMaps=true; } },
                 { "aid|athleteid=",   v => { AthleteId=v; } },
                 { "at|activity_type=",   v => { ActivityTypeStr=v; } },
@@ -87,6 +89,13 @@ namespace Strava.XApi.Tools
                         break;
                     }
                     */
+                    if (doListAthletes || doAll)
+                    {
+                        foreach(AthleteShort athlete in db.AthleteShortDB)
+                        {
+                            logger.LogInformation($"Athletes {athlete.AthleteName} {athlete.AthleteId}");                            
+                        }
+                    }
 
                     if (doAthleteCounts || doAll)
                     {
