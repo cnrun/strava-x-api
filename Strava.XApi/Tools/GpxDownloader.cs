@@ -7,7 +7,7 @@ using Strava.XApi.Model;
 using System.Collections.Generic;
 
 namespace Strava.XApi.Tools
-{    
+{
     public class GpxDownloader
     {
         static internal int Downloader(StravaXApi stravaXApi, string[] args)
@@ -56,6 +56,7 @@ namespace Strava.XApi.Tools
                     }
                     // Ignore Activities without image map. They have probably been enterred without gps-track.
                     dbs=dbs.Where(a => a.ActivityImageMapUrl!=null);
+                    // retrieve the activities from the database.
                     activities = dbs.ToList();
                 }
                 logger.LogInformation($"BEGIN GPX Download for {(AthleteId==null?"all athletes":AthleteId)}/{(ActivityTypeStr==null?"all types":ActivityTypeStr)} :{activities.Count()}");
@@ -64,6 +65,7 @@ namespace Strava.XApi.Tools
                 if (doGpx && activities.Count>0)
                 {
                     bool needTracksDownload=false;
+                    // detect if any activity needs a gpx file
                     foreach(ActivityShort activity in activities)
                     {
                         string outputDir=$"{gpxDir}/{activity.AthleteId}";
@@ -74,9 +76,12 @@ namespace Strava.XApi.Tools
                             break;
                         }
                     }
+                    // if no track is needed, we could exit without signin in Strava.
                     if (needTracksDownload)
                     {
+                        // signin
                         stravaXApi.signIn();
+                        // go throw all activities.
                         foreach(ActivityShort activity in activities)
                         {
                             string outputDir=$"{gpxDir}/{activity.AthleteId}";
@@ -84,8 +89,10 @@ namespace Strava.XApi.Tools
                             string outputFilename=$"{activity.ActivityId}_{activity.AthleteId}.gpx";
                             string outputFilenameGZip=$"{outputFilename}.gz";
                             string outputFilenameErr=$"{outputFilename}.err";
+                            // download only if the gpx, gz or the err file do not exists.
                             if (!File.Exists($"{outputDir}/{outputFilename}") && !File.Exists($"{outputDir}/{outputFilenameGZip}") && !File.Exists($"{outputDir}/{outputFilenameErr}"))
                             {
+                                // create directory if needed
                                 if (!Directory.Exists(outputDir))
                                 {
                                     DirectoryInfo DirInfo = Directory.CreateDirectory(outputDir);
@@ -99,7 +106,7 @@ namespace Strava.XApi.Tools
                                 catch(PrivateGpxException e)
                                 {
                                     logger.LogDebug($"GPX Track private for {activity.AthleteId}: {e.ActivityId} {e.Message}");
-                                    // Write error file
+                                    // write error file, do prevent a second try.
                                     using (StreamWriter outputFile = new StreamWriter(Path.Combine(outputDir, outputFilenameErr)))
                                     {
                                         outputFile.WriteLine($"Error while downloading GPX for athlete:{activity.AthleteId} activity{activity.ActivityId}");
@@ -119,6 +126,7 @@ namespace Strava.XApi.Tools
                 }
                 else if (! doGpx)
                 {
+                    // just retrieve without retrieving the gpx files.
                     int countToDownload=0;
                     int countDownloaded=0;
                     foreach(ActivityShort activity in activities)
@@ -139,11 +147,13 @@ namespace Strava.XApi.Tools
                     logger.LogInformation($"GPX Track to download:{countToDownload} already downloaded:{countDownloaded}");
                 }
                 logger.LogInformation($"DONE GPX Download {countDownload} (skipped: {countSkipped})for {(AthleteId==null?"all athletes":AthleteId)}/{(ActivityTypeStr==null?"all types":ActivityTypeStr)} :{activities.Count()}");
+                // everything done, with return 0 we are telling the container, that there's no need to restart.
                 ret = 0;
             }
             catch(Exception e)
             {
-                logger.LogError($"ERROR:{e.ToString()}");  
+                logger.LogError($"ERROR:{e.ToString()}");
+                // return error code, container should restart.
                 ret = 1;
             }
             finally
