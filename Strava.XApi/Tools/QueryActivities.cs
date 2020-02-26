@@ -23,9 +23,11 @@ namespace Strava.XApi.Tools
             string clientId = Guid.NewGuid().ToString();
             int TimerSeconds = -1;
             int TimerExitCode = 2;
+            bool doVerbose=false;
             var p = new OptionSet () {
                 { "t|timer_sec=",   v => { TimerSeconds=int.Parse(v); } },
                 { "e|timer_exit_code=",   v => { TimerExitCode=int.Parse(v); } },
+                { "v|verbose",   v => { doVerbose=true; } },
             };
             p.Parse(args);
 
@@ -65,7 +67,7 @@ namespace Strava.XApi.Tools
                             // Not best praxis but enought for Prototype.
                             // https://stackoverflow.com/a/2656612/281188
                             // IList<ActivityRangeQuery> queries = db.ActivityQueriesDB.Where(a => a.Status==QueryStatus.Created).OrderByDescending(a => a.DateFrom).Take(50).ToList();
-                            ret = queryAthlete(aid, clientId, stravaXApi, db);
+                            ret = queryAthlete(aid, clientId, stravaXApi, db, doVerbose);
 
                             TimeSpan ts = stopWatch.Elapsed;
                             if (TimerSeconds>0 && ts.TotalSeconds>TimerSeconds)
@@ -97,7 +99,7 @@ namespace Strava.XApi.Tools
             }
             return ret;
         }
-        static int queryRange(StravaXApi stravaXApi, StravaXApiContext db, IList<ActivityRangeQuery> queries)
+        static int queryRange(StravaXApi stravaXApi, StravaXApiContext db, IList<ActivityRangeQuery> queries, bool doVerbose)
         {
             int ret = 0;
             foreach(ActivityRangeQuery arq in queries)
@@ -147,7 +149,10 @@ namespace Strava.XApi.Tools
                     arq.StatusChanged=DateTime.Now;
                     // should not have to save anything.
                     db.SaveChanges();
-                    Console.WriteLine($"enterred activity count: {EnterredActivityCount}/{db.ActivityShortDB.Count()} for {arq.AthleteId} at {arq.DateFrom.Year:D4}/{arq.DateFrom.Month:D2}");
+                    if (doVerbose)
+                        Console.WriteLine($"enterred activity count: {EnterredActivityCount}/{db.ActivityShortDB.Count()} for {arq.AthleteId} at {arq.DateFrom.Year:D4}/{arq.DateFrom.Month:D2}");
+                    else // '.Count()' is pretty expensive, skip it if verbose should be minimal.
+                        Console.WriteLine($"enterred activity count: {EnterredActivityCount} for {arq.AthleteId} at {arq.DateFrom.Year:D4}/{arq.DateFrom.Month:D2}");
                     ErrorCountConsecutive=0;
                 }
                 catch(Exception e)
@@ -164,26 +169,27 @@ namespace Strava.XApi.Tools
                         throw e;
                     }
                 }
-                Console.WriteLine($"activities stored:{db.ActivityShortDB.Count()}/{QueryStatus.Created}:{db.ActivityQueriesDB.Count(a => a.Status==QueryStatus.Created)}/{QueryStatus.Reserved}:{db.ActivityQueriesDB.Count(a => a.Status==QueryStatus.Reserved)}");
+
+                if (doVerbose)
+                    Console.WriteLine($"activities stored:{db.ActivityShortDB.Count()}/{QueryStatus.Created}:{db.ActivityQueriesDB.Count(a => a.Status==QueryStatus.Created)}/{QueryStatus.Reserved}:{db.ActivityQueriesDB.Count(a => a.Status==QueryStatus.Reserved)}");
+
                 Count++;
+
                 // Exist when KeepRunning is false (from the debugger),
                 // or the file 'QueryActivities.quit' exists.
                 //   *Program will exit with "touch QueryActivities.quit" in /app directory in container.
-
                 Boolean KeepRunning=true;
                 if (!KeepRunning || File.Exists("QueryActivities.quit.immediatly"))
                 {
                     Console.WriteLine($"break {KeepRunning} {Count}");
                     // regular exit, container should ended.
                     throw new CancelExecution("break {KeepRunning} {Count}");
-                    // ret = 0;
-                    // break;
                 }
             }
             return ret;
         }
 
-        static int queryAthlete(string aid, string clientId, StravaXApi stravaXApi, StravaXApiContext db)
+        static int queryAthlete(string aid, string clientId, StravaXApi stravaXApi, StravaXApiContext db, bool doVerbose)
         {
             int ret = 0;
             IList<ActivityRangeQuery> q0 = db.ActivityQueriesDB.Where(a => a.AthleteId==aid && a.Status==QueryStatus.Created).OrderByDescending(a => a.DateFrom).Take(12).ToList();
@@ -211,7 +217,7 @@ namespace Strava.XApi.Tools
                 // Run for all reserved queries
                 try
                 {
-                    ret = queryRange(stravaXApi, db, queries);
+                    ret = queryRange(stravaXApi, db, queries, doVerbose);
                 }
                 catch(CancelExecution e)
                 {
