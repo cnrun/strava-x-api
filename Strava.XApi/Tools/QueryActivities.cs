@@ -6,6 +6,8 @@ using System.IO;
 using Microsoft.EntityFrameworkCore;
 using NDesk.Options;
 using System.Diagnostics;
+using Microsoft.Extensions.Logging;
+
 
 namespace Strava.XApi.Tools
 {
@@ -18,8 +20,22 @@ namespace Strava.XApi.Tools
         static private int Count=0;
         static private int ErrorCountConsecutive=0;
         static private int ErrorCount=0;
+        static private ILogger<StravaXApi> logger;
         static internal int SendQueriesForActivities(StravaXApi stravaXApi, string[] args)
         {
+            var loggerFactory = LoggerFactory.Create(builder =>
+            {
+                builder
+                    .AddFilter("Microsoft", Microsoft.Extensions.Logging.LogLevel.Warning)
+                    .AddFilter("System", Microsoft.Extensions.Logging.LogLevel.Warning)
+                    .AddFilter("Strava.XApi.Tools.GpxDownloader", Microsoft.Extensions.Logging.LogLevel.Debug)
+                    .AddFilter("StravaXApi", Microsoft.Extensions.Logging.LogLevel.Information)
+                    .AddProvider(new CustomLoggerProvider());
+                    //.AddEventLog();
+            });
+            logger = loggerFactory.CreateLogger<StravaXApi>();
+            logger.LogDebug("Log Query Activities");
+
             string clientId = Guid.NewGuid().ToString();
             int TimerSeconds = -1;
             int TimerExitCode = 2;
@@ -32,7 +48,8 @@ namespace Strava.XApi.Tools
             p.Parse(args);
 
             int ret = -1;
-            Console.WriteLine($"Query activities. Client:{clientId}");
+            
+            logger.LogInformation($"Query activities. Client:{clientId}");
             using (StravaXApiContext db = new StravaXApiContext())
             {
                 stravaXApi.signIn();
@@ -48,7 +65,7 @@ namespace Strava.XApi.Tools
 
                 if (AthleteIdList.Count==0)
                 {
-                    Console.WriteLine($"no more athlete to search for. created:{qAthleteCreated.Count()} reserved:{qAthleteReserved.Count()}");
+                    logger.LogInformation($"no more athlete to search for. created:{qAthleteCreated.Count()} reserved:{qAthleteReserved.Count()}");
                     // TODO some queries may have been reserved, but no Thread is working on it. It should be usefull to detect and reset.
                 }
                 else
@@ -60,7 +77,7 @@ namespace Strava.XApi.Tools
                         while(AthleteIdList.Count>0 && ret==0)
                         {
                             string aid =AthleteIdList.ElementAt(new Random().Next(AthleteIdList.Count));
-                            Console.WriteLine($"retrieve activity for athlete {aid}");
+                            logger.LogInformation($"retrieve activity for athlete {aid}");
 
                             // https://docs.microsoft.com/en-us/ef/ef6/querying/
                             // First retrieve all query objects to avoid "New transaction is not allowed because there are other threads running in the session."
@@ -73,14 +90,14 @@ namespace Strava.XApi.Tools
                             if (TimerSeconds>0 && ts.TotalSeconds>TimerSeconds)
                             {
                                 ret = TimerExitCode;
-                                Console.WriteLine($"Timer reached after {ts.ToString()} now exit with {ret}.");
+                                logger.LogInformation($"Timer reached after {ts.ToString()} now exit with {ret}.");
                                 // exit with error code, container should restart
                                 break;
                             }
                             Boolean KeepRunning=true;
                             if (!KeepRunning || File.Exists("QueryActivities.quit"))
                             {
-                                Console.WriteLine($"break {KeepRunning} {Count}");
+                                logger.LogInformation($"break {KeepRunning} {Count}");
                                 // regular exit, container should ended.
                                 ret = 0;
                                 break;
@@ -93,7 +110,7 @@ namespace Strava.XApi.Tools
                     }
                     catch(CancelExecution e)
                     {
-                        Console.WriteLine($"Execution has been canceled: {e.Message}");
+                        logger.LogInformation($"Execution has been canceled: {e.Message}");
                     }
                 }
             }
@@ -117,7 +134,7 @@ namespace Strava.XApi.Tools
                     catch(DbUpdateConcurrencyException)
                     {
                         // Just skip this entry if some conflict exists.
-                        Console.WriteLine($"skip conflicted entry for {arq.AthleteId} at {arq.DateFrom.Year:D4}/{arq.DateFrom.Month:D2}");
+                        logger.LogInformation($"skip conflicted entry for {arq.AthleteId} at {arq.DateFrom.Year:D4}/{arq.DateFrom.Month:D2}");
                         continue;
                     }
                     var ActivitiesList = stravaXApi.getActivities(arq.AthleteId,$"{arq.DateFrom.Year:D4}",$"{arq.DateFrom.Month:D2}");
@@ -136,13 +153,13 @@ namespace Strava.XApi.Tools
                             catch(DbUpdateConcurrencyException)
                             {
                                 // Just skip this entry if some conflict exists.
-                                Console.WriteLine($"❌ skip conflicted activity {ActivityShort}");
+                                logger.LogInformation($"❌ skip conflicted activity {ActivityShort}");
                                 continue;
                             }
                         }
                         else
                         {
-                            Console.WriteLine($"❌ {ActivityShort.ActivityId} allready in database");
+                            logger.LogInformation($"❌ {ActivityShort.ActivityId} allready in database");
                         }
                     }
                     arq.Status=QueryStatus.Done;
@@ -150,16 +167,16 @@ namespace Strava.XApi.Tools
                     // should not have to save anything.
                     db.SaveChanges();
                     if (doVerbose)
-                        Console.WriteLine($"enterred activity count: {EnterredActivityCount}/{db.ActivityShortDB.Count()} for {arq.AthleteId} at {arq.DateFrom.Year:D4}/{arq.DateFrom.Month:D2}");
+                        logger.LogInformation($"enterred activity count: {EnterredActivityCount}/{db.ActivityShortDB.Count()} for {arq.AthleteId} at {arq.DateFrom.Year:D4}/{arq.DateFrom.Month:D2}");
                     else // '.Count()' is pretty expensive, skip it if verbose should be minimal.
-                        Console.WriteLine($"enterred activity count: {EnterredActivityCount} for {arq.AthleteId} at {arq.DateFrom.Year:D4}/{arq.DateFrom.Month:D2}");
+                        logger.LogInformation($"enterred activity count: {EnterredActivityCount} for {arq.AthleteId} at {arq.DateFrom.Year:D4}/{arq.DateFrom.Month:D2}");
                     ErrorCountConsecutive=0;
                 }
                 catch(Exception e)
                 {
                     ErrorCountConsecutive++;
                     ErrorCount++;
-                    Console.WriteLine($"Error: {ErrorCountConsecutive}/3 total:{ErrorCount} -> skip:{arq} {e.Message}");
+                    logger.LogInformation($"Error: {ErrorCountConsecutive}/3 total:{ErrorCount} -> skip:{arq} {e.Message}");
                     arq.Status=QueryStatus.Error;
                     arq.StatusChanged=DateTime.Now;
                     arq.Message=$"Error: {ErrorCountConsecutive}/3 total:{ErrorCount} -> skip:{arq} {e.Message}";
@@ -171,7 +188,7 @@ namespace Strava.XApi.Tools
                 }
 
                 if (doVerbose)
-                    Console.WriteLine($"activities stored:{db.ActivityShortDB.Count()}/{QueryStatus.Created}:{db.ActivityQueriesDB.Count(a => a.Status==QueryStatus.Created)}/{QueryStatus.Reserved}:{db.ActivityQueriesDB.Count(a => a.Status==QueryStatus.Reserved)}");
+                    logger.LogInformation($"activities stored:{db.ActivityShortDB.Count()}/{QueryStatus.Created}:{db.ActivityQueriesDB.Count(a => a.Status==QueryStatus.Created)}/{QueryStatus.Reserved}:{db.ActivityQueriesDB.Count(a => a.Status==QueryStatus.Reserved)}");
 
                 Count++;
 
@@ -181,7 +198,7 @@ namespace Strava.XApi.Tools
                 Boolean KeepRunning=true;
                 if (!KeepRunning || File.Exists("QueryActivities.quit.immediatly"))
                 {
-                    Console.WriteLine($"break {KeepRunning} {Count}");
+                    logger.LogInformation($"break {KeepRunning} {Count}");
                     // regular exit, container should ended.
                     throw new CancelExecution("break {KeepRunning} {Count}");
                 }
@@ -209,7 +226,7 @@ namespace Strava.XApi.Tools
                     catch(DbUpdateConcurrencyException)
                     {
                         // Just skip this entry if some conflict exists.
-                        Console.WriteLine($"skip: Can't reserve query {arq.AthleteId} at {arq.DateFrom.Year:D4}/{arq.DateFrom.Month:D2} for {clientId}");
+                        logger.LogInformation($"skip: Can't reserve query {arq.AthleteId} at {arq.DateFrom.Year:D4}/{arq.DateFrom.Month:D2} for {clientId}");
                         continue;
                     }
                 }
@@ -232,7 +249,7 @@ namespace Strava.XApi.Tools
                     {
                         if (arq.Status==QueryStatus.Reserved)
                         {
-                            Console.WriteLine($"WARN: remove reservation on {arq}");
+                            logger.LogInformation($"WARN: remove reservation on {arq}");
                         }
                     }
                     db.SaveChanges();
