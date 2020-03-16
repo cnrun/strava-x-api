@@ -6,7 +6,7 @@
 # docker run --rm -v /.../data:/app/data -e "STRAVA_USER=..." -e "STRAVA_PWD=..." -e "FROM_YEAR=2019" -e "FROM_MONTH=08" -e "TO_YEAR=2019" -e "TO_MONTH=08" strava-x-api:chrome -c=get-activities --athleteid=...
 
 # Dockerfile from https://github.com/dotnet/dotnet-docker/blob/master/samples/dotnetapp/Dockerfile
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1.2 AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1.200 AS build
 WORKDIR /app
 
 # copy csproj and restore as distinct layers
