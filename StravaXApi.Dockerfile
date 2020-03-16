@@ -4,7 +4,7 @@
 # docker run --rm -v /Users/ericlouvard/Documents/Projects/temp/data:/app/data strava-x-api -c=stats
 
 # Dockerfile from https://github.com/dotnet/dotnet-docker/blob/master/samples/dotnetapp/Dockerfile
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1.2 AS build
 WORKDIR /app
 
 # copy csproj and restore as distinct layers
@@ -24,7 +24,7 @@ RUN dotnet publish -c Release -o out
 # COPY tests/. .
 # ENTRYPOINT ["dotnet", "test", "--logger:trx"]
 
-FROM mcr.microsoft.com/dotnet/core/runtime:3.1 AS runtime
+FROM mcr.microsoft.com/dotnet/core/runtime:3.1.2 AS runtime
 WORKDIR /app
 COPY --from=build /app/Strava.XApi/out ./
 ENTRYPOINT ["dotnet", "StravaXApi.dll"]
