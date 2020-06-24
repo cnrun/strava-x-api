@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.IO;
 using System.Linq;
 using System.Net;
 using Strava.XApi.Model;
@@ -37,6 +39,7 @@ namespace Strava.XApi.Tools
             bool doAthleteStats=false;
             string doRenewMonth=null;
             bool doQueryCounts=false;
+            bool doGpxCounts=false;
             bool doActivityCounts=false;
             bool doAthleteCounts=false;
             bool doListAthletes=false;
@@ -53,6 +56,7 @@ namespace Strava.XApi.Tools
                 { "m|renew-month=",   v => { doRenewMonth=v; } },
                 { "cath|count-athletes",   v => { doAthleteCounts=true; } },
                 { "cq|count-queries",   v => { doQueryCounts=true; } },
+                { "cgpx|count-gpx",   v => { doGpxCounts=true; } },
                 { "cact|count-activities",   v => { doActivityCounts=true; } },
             };
             p.Parse(args);
@@ -114,7 +118,89 @@ namespace Strava.XApi.Tools
                             logger.LogInformation($" {st} {db.ActivityQueriesDB.Count(a => a.Status==st)}");
                         }
                     }
+                    if (doGpxCounts || doAll)
+                    {
+                        // Count GPX Files and sort by activity-Types.
+                        string rootPath="gpx";
 
+                        foreach(string athleteEntry in Directory.GetDirectories(rootPath))
+                        {
+                            var match = Regex.Match(athleteEntry,".*[/]([0-9]+)");
+                            string AthleteIdStr=match.Groups[1].Value;
+                            // logger.LogInformation($" directory for Athlete {AthleteIdStr} found {athleteEntry}");
+                            Hashtable errTable = new Hashtable();
+                            Hashtable trackTable = new Hashtable();
+
+                            foreach(string gpxActivity in Directory.EnumerateFiles(athleteEntry,"*.err"))
+                            {
+                                match = Regex.Match(gpxActivity,$".*[/]([0-9]+)_{AthleteIdStr}.gpx.err");
+                                string ActivityIdStr=match.Groups[1].Value;
+                                errTable.Add(ActivityIdStr, gpxActivity);
+                            }
+
+                            foreach(string gpxActivity in Directory.EnumerateFiles(athleteEntry,"*.gpx.gz"))
+                            {
+                                match = Regex.Match(gpxActivity,$".*[/]([0-9]+)_{AthleteIdStr}.gpx.gz");
+                                string ActivityIdStr=match.Groups[1].Value;
+                                if (errTable.ContainsKey(ActivityIdStr))
+                                {
+                                    logger.LogWarning($"Track for {ActivityIdStr} found, be marked as erroneous");
+                                }
+                                if (trackTable.ContainsKey(ActivityIdStr))
+                                {
+                                    logger.LogWarning($"Track for {ActivityIdStr} already enterred {trackTable[ActivityIdStr]} <-> {gpxActivity}");
+                                }
+                                else
+                                {
+                                    trackTable.Add(ActivityIdStr, gpxActivity);
+                                }
+                            }
+
+                            foreach(string gpxActivity in Directory.EnumerateFiles(athleteEntry,"*.gpx"))
+                            {
+                                match = Regex.Match(gpxActivity,$".*[/]([0-9]+)_{AthleteIdStr}.gpx");
+                                string ActivityIdStr=match.Groups[1].Value;
+                                if (errTable.ContainsKey(ActivityIdStr))
+                                {
+                                    logger.LogWarning($"Track for {ActivityIdStr} found, be marked as erroneous");
+                                }
+                                if (trackTable.ContainsKey(ActivityIdStr))
+                                {
+                                    logger.LogWarning($"Track for {ActivityIdStr} already enterred {trackTable[ActivityIdStr]} <-> {gpxActivity}");
+                                }
+                                else
+                                {
+                                    logger.LogWarning($"Found GPX without compression: track for {ActivityIdStr} already enterred {gpxActivity}");
+                                    trackTable.Add(ActivityIdStr, gpxActivity);
+                                }
+                            }
+
+                            Hashtable typeCount = new Hashtable();
+                            foreach(string activity_id in trackTable.Keys)
+                            {
+                                ActivityShort activity = db.ActivityShortDB.Find(activity_id);
+                                if (activity==null)
+                                {
+                                    // logger.LogWarning($"can't find activity for {activity_id}");
+                                    continue;
+                                }
+                                int tCount=0;
+                                if (typeCount.ContainsKey(activity.ActivityType))
+                                {
+                                    tCount=(int)typeCount[activity.ActivityType];
+                                    typeCount.Remove(activity.ActivityType);
+                                }
+                                tCount ++;
+                                typeCount.Add(activity.ActivityType,tCount);
+                            }
+                            // var al = db.ActivityShortDB.Where(a=>a.AthleteId==AthleteIdStr);
+                            // int actCount = al.Count();
+                            string keys = string.Join(",", typeCount.Keys.Cast<ActivityType>().Select(x => $"{x.ToString()} {typeCount[x]}").ToArray());
+                            int actCount = 0;
+                            logger.LogInformation($"Athlete {AthleteIdStr}, activities found in DB: {actCount} GPX: {trackTable.Keys.Count} ERR: {errTable.Keys.Count} {keys}");
+                        }
+
+                    }
                     if (doRenewMonth!=null)
                     {
                         // set all DONE queries for the given month to Created                         
